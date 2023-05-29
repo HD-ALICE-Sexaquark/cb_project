@@ -46,24 +46,28 @@ namespace B2
   PrimaryGeneratorAction::PrimaryGeneratorAction()
   {
     G4int nofParticles = 1;
-    fParticleGun = new G4ParticleGun(nofParticles);
+    fBackgroundGun = new G4ParticleGun(nofParticles);
+    fSignalGun = new G4ParticleGun(nofParticles);
   }
 
   PrimaryGeneratorAction::~PrimaryGeneratorAction()
   {
-    delete fParticleGun;
+    delete fBackgroundGun;
+    delete fSignalGun;
   }
 
   void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent)
   {
 
+    /*** BACKGROUND ***/
+
     /* Read CSV file */
 
-    std::vector<int> status, pdg_code, first_dau, last_dau;
-    std::vector<double> mom_x, mom_y, mom_z;
+    std::vector<int> bkgStatus, bkgPdgCode, bkgFirstDau, bkgLastDau;
+    std::vector<double> bkgPx, bkgPy, bkgPz;
 
-    std::ifstream file("../test.dat");
-    if (!file.is_open())
+    std::ifstream bkgFile("../bkg.dat");
+    if (!bkgFile.is_open())
     {
       std::cout << "Error opening file" << std::endl;
       return;
@@ -71,7 +75,7 @@ namespace B2
 
     std::string line;
 
-    while (std::getline(file, line))
+    while (std::getline(bkgFile, line))
     {
       std::istringstream iss(line);
       std::string token;
@@ -79,50 +83,127 @@ namespace B2
       // Read each column separated by commas
       std::getline(iss, token, ',');
 
-      // debug
-      std::cout << "TOKEN: " << token << std::endl;
+      // (debug)
+      // std::cout << "TOKEN: " << token << std::endl;
 
-      status.push_back(std::stoi(token));
-
-      std::getline(iss, token, ',');
-      pdg_code.push_back(std::stoi(token));
+      bkgStatus.push_back(std::stoi(token));
 
       std::getline(iss, token, ',');
-      first_dau.push_back(std::stoi(token));
+      bkgPdgCode.push_back(std::stoi(token));
 
       std::getline(iss, token, ',');
-      last_dau.push_back(std::stoi(token));
+      bkgFirstDau.push_back(std::stoi(token));
 
       std::getline(iss, token, ',');
-      mom_x.push_back(std::stod(token));
+      bkgLastDau.push_back(std::stoi(token));
 
       std::getline(iss, token, ',');
-      mom_y.push_back(std::stod(token));
+      bkgPx.push_back(std::stod(token));
 
       std::getline(iss, token, ',');
-      mom_z.push_back(std::stod(token));
+      bkgPy.push_back(std::stod(token));
+
+      std::getline(iss, token, ',');
+      bkgPz.push_back(std::stod(token));
     }
 
-    file.close();
+    bkgFile.close();
 
-    // debug
-    printf("HEREEE %i %f %f %f\n", pdg_code[0], mom_x[0], mom_y[0], mom_z[0]);
+    // (debug)
+    // printf("HEREEE %i %f %f %f\n", bkgPdgCode[0], bkgPx[0], bkgPy[0], bkgPz[0]);
 
     /* Gun */
 
-    G4ParticleGun *ParticleGun = new G4ParticleGun(1);
+    fBackgroundGun = new G4ParticleGun(1);
 
-    for (int i = 0; i < (int)status.size(); i++)
+    for (int i = 0; i < (int)bkgStatus.size(); i++)
     {
 
-      if (std::abs(mom_z[i] * GeV) > 0.01 * GeV)
+      // (cut)
+      if (std::abs(bkgPz[i] * GeV) < 0.01 * GeV)
       {
-        ParticleGun->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle(pdg_code[i]));
-        ParticleGun->SetParticleMomentum(G4ThreeVector(mom_x[i] * GeV, mom_y[i] * GeV, -mom_z[i] * GeV));
-        ParticleGun->SetParticlePosition(G4ThreeVector(0., 0., 0. - 300. * cm));
-
-        ParticleGun->GeneratePrimaryVertex(anEvent);
+        continue;
       }
+
+      fBackgroundGun->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle(bkgPdgCode[i]));
+      fBackgroundGun->SetParticleMomentum(G4ThreeVector(bkgPx[i] * GeV, bkgPy[i] * GeV, -bkgPz[i] * GeV)); // PENDING!
+      fBackgroundGun->SetParticlePosition(G4ThreeVector(0., 0., 0. - 300. * cm));                          // PENDING!
+
+      fBackgroundGun->GeneratePrimaryVertex(anEvent);
+    }
+
+    /*** SIGNAL ***/
+
+    /* Read CSV file */
+
+    std::vector<int> sigStatus, sigPdgCode, sigFirstDau, sigLastDau;
+    std::vector<double> sigPx, sigPy, sigPz;
+    std::vector<double> sigVx, sigVy, sigVz;
+
+    std::ifstream sigFile("../signal.dat");
+    if (!sigFile.is_open())
+    {
+      std::cout << "Error opening file" << std::endl;
+      return;
+    }
+
+    while (std::getline(sigFile, line))
+    {
+      std::istringstream iss(line);
+      std::string token;
+
+      // Read each column separated by commas
+      std::getline(iss, token, ',');
+
+      // (debug)
+      std::cout << "TOKEN: " << token << std::endl;
+
+      sigStatus.push_back(std::stoi(token));
+
+      std::getline(iss, token, ',');
+      sigPdgCode.push_back(std::stoi(token));
+
+      std::getline(iss, token, ',');
+      sigFirstDau.push_back(std::stoi(token));
+
+      std::getline(iss, token, ',');
+      sigLastDau.push_back(std::stoi(token));
+
+      std::getline(iss, token, ',');
+      sigPx.push_back(std::stod(token));
+
+      std::getline(iss, token, ',');
+      sigPy.push_back(std::stod(token));
+
+      std::getline(iss, token, ',');
+      sigPz.push_back(std::stod(token));
+
+      std::getline(iss, token, ',');
+      sigVx.push_back(std::stod(token));
+
+      std::getline(iss, token, ',');
+      sigVy.push_back(std::stod(token));
+
+      std::getline(iss, token, ',');
+      sigVz.push_back(std::stod(token));
+    }
+
+    sigFile.close();
+
+    // (debug)
+    printf("HEREEE %i %f %f %f\n", sigPdgCode[0], sigPx[0], sigPy[0], sigPz[0]);
+
+    /* Gun */
+
+    fSignalGun = new G4ParticleGun(1);
+
+    for (int i = 0; i < (int)sigStatus.size(); i++)
+    {
+      fSignalGun->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle(sigPdgCode[i]));
+      fSignalGun->SetParticleMomentum(G4ThreeVector(sigPx[i] * GeV, sigPy[i] * GeV, -sigPz[i] * GeV));          // PENDING!
+      fSignalGun->SetParticlePosition(G4ThreeVector(sigVx[i] * cm, sigVy[i] * cm, -sigVz[i] * cm)); // PENDING!
+
+      fSignalGun->GeneratePrimaryVertex(anEvent);
     }
   }
 }

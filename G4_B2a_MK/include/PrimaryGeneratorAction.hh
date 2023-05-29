@@ -54,13 +54,15 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 
     void GeneratePrimaries(G4Event* ) override;
 
-    G4ParticleGun* GetParticleGun() {return fParticleGun;}
+    G4ParticleGun* GetBackgroundGun() {return fBackgroundGun;}
+    G4ParticleGun* GetSignalGun() {return fSignalGun;}
 
     // Set methods
     void SetRandomFlag(G4bool );
 
   private:
-    G4ParticleGun* fParticleGun = nullptr; // G4 particle gun
+    G4ParticleGun* fBackgroundGun = nullptr;
+    G4ParticleGun* fSignalGun = nullptr;
 
 };
 
