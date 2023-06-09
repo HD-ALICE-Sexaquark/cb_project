@@ -1,3 +1,9 @@
 G4_B2a_MK_build/
 .vscode/
 **.old
+bkg_gen/pythia8309_build
+bkg_gen/pythia8309_root
+bkg_gen/pythia8309_src
+**.tgz
+bkg_gen/main_fct
+**.log
