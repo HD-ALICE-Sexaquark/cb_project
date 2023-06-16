@@ -7,3 +7,4 @@ bkg_gen/pythia8309_src
 **.tgz
 bkg_gen/main_fct
 **.log
+Makefile**

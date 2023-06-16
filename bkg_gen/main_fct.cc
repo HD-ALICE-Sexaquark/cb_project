@@ -42,12 +42,7 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < pythia.event.size(); i++) {
 
             // (cut) on status
-            if (pythia.event[i].status() < 0) {
-                continue;
-            }
-
-            // (cut) on daughters
-            if (pythia.event[i].daughter1() != 0 || pythia.event[i].daughter2() != 0) {
+            if (!pythia.event[i].isFinal()) {
                 continue;
             }
 
