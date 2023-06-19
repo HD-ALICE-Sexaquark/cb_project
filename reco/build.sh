@@ -11,10 +11,10 @@ CURRENT_DIR=${PWD}
 G4_LIB_DIR=$(readlink -f "$(geant4-config --prefix)/lib")
 
 #define source dir
-SOURCE_DIR=$(readlink -f ./G4_B2a_MK)
+SOURCE_DIR=$(readlink -f ./B2a_MK)
 
 # define and create build dir
-BUILD_DIR=$(readlink -f ./G4_B2a_MK_build)
+BUILD_DIR=$(readlink -f ./B2a_MK_build)
 mkdir -p ${BUILD_DIR}
 
 cd ${BUILD_DIR}
