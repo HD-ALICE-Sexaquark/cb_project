@@ -30,84 +30,72 @@
 #include "DetectorMessenger.hh"
 #include "DetectorConstruction.hh"
 
-#include "G4UIdirectory.hh"
-#include "G4UIcmdWithAString.hh"
 #include "G4UIcmdWithADoubleAndUnit.hh"
+#include "G4UIcmdWithAString.hh"
+#include "G4UIdirectory.hh"
 
 extern std::string gun0vals;
-namespace B2a
-{
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+namespace B2a {
 
-DetectorMessenger::DetectorMessenger(DetectorConstruction* det)
- : fDetectorConstruction(det)
-{
-  fDirectory = new G4UIdirectory("/B2/");
-  fDirectory->SetGuidance("UI commands specific to this example.");
+DetectorMessenger::DetectorMessenger(DetectorConstruction* det) : fDetectorConstruction(det) {
+    fDirectory = new G4UIdirectory("/B2/");
+    fDirectory->SetGuidance("UI commands specific to this example.");
 
-  fDetDirectory = new G4UIdirectory("/B2/det/");
-  fDetDirectory->SetGuidance("Detector construction control");
+    fDetDirectory = new G4UIdirectory("/B2/det/");
+    fDetDirectory->SetGuidance("Detector construction control");
 
+    fFCT = new G4UIdirectory("/FCT/");
+    fFCT->SetGuidance("FCT  guide");
+    fFCTCmd = new G4UIcmdWithAString("/FCT/guncmd", this);
+    fFCTCmd->SetGuidance("Select gun ops");
+    fFCTCmd->SetParameterName("GUN", false);
+    fFCTCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
-  fFCT = new G4UIdirectory("/FCT/");
-  fFCT->SetGuidance("FCT  guide");
-  fFCTCmd = new G4UIcmdWithAString("/FCT/guncmd",this);
-  fFCTCmd->SetGuidance("Select gun ops");
-  fFCTCmd->SetParameterName("GUN",false);
-  fFCTCmd->AvailableForStates(G4State_PreInit,G4State_Idle); 
+    fTargMatCmd = new G4UIcmdWithAString("/B2/det/setTargetMaterial", this);
+    fTargMatCmd->SetGuidance("Select Material of the Target.");
+    fTargMatCmd->SetParameterName("choice", false);
+    fTargMatCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
-  fTargMatCmd = new G4UIcmdWithAString("/B2/det/setTargetMaterial",this);
-  fTargMatCmd->SetGuidance("Select Material of the Target.");
-  fTargMatCmd->SetParameterName("choice",false);
-  fTargMatCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
+    fChamMatCmd = new G4UIcmdWithAString("/B2/det/setChamberMaterial", this);
+    fChamMatCmd->SetGuidance("Select Material of the Chamber.");
+    fChamMatCmd->SetParameterName("choice", false);
+    fChamMatCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
-  fChamMatCmd = new G4UIcmdWithAString("/B2/det/setChamberMaterial",this);
-  fChamMatCmd->SetGuidance("Select Material of the Chamber.");
-  fChamMatCmd->SetParameterName("choice",false);
-  fChamMatCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
-
-  fStepMaxCmd = new G4UIcmdWithADoubleAndUnit("/B2/det/stepMax",this);
-  fStepMaxCmd->SetGuidance("Define a step max");
-  fStepMaxCmd->SetParameterName("stepMax",false);
-  fStepMaxCmd->SetUnitCategory("Length");
-  fStepMaxCmd->AvailableForStates(G4State_Idle);
+    fStepMaxCmd = new G4UIcmdWithADoubleAndUnit("/B2/det/stepMax", this);
+    fStepMaxCmd->SetGuidance("Define a step max");
+    fStepMaxCmd->SetParameterName("stepMax", false);
+    fStepMaxCmd->SetUnitCategory("Length");
+    fStepMaxCmd->AvailableForStates(G4State_Idle);
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+DetectorMessenger::~DetectorMessenger() {
+    delete fTargMatCmd;
+    delete fChamMatCmd;
+    delete fStepMaxCmd;
+    delete fDirectory;
+    delete fDetDirectory;
 
-DetectorMessenger::~DetectorMessenger()
-{
-  delete fTargMatCmd;
-  delete fChamMatCmd;
-  delete fStepMaxCmd;
-  delete fDirectory;
-  delete fDetDirectory;
-
-  delete fFCTCmd;
-  delete fFCT;
+    delete fFCTCmd;
+    delete fFCT;
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void DetectorMessenger::SetNewValue(G4UIcommand* command, G4String newValue) {
+    if (command == fFCTCmd) {
+        gun0vals = newValue;
+    }
 
-void DetectorMessenger::SetNewValue(G4UIcommand* command,G4String newValue)
-{ 
-  if( command == fFCTCmd )
-	{ 
-	  gun0vals = newValue; }
+    if (command == fTargMatCmd) {
+        fDetectorConstruction->SetTargetMaterial(newValue);
+    }
 
-  if( command == fTargMatCmd )
-   { fDetectorConstruction->SetTargetMaterial(newValue);}
+    if (command == fChamMatCmd) {
+        fDetectorConstruction->SetChamberMaterial(newValue);
+    }
 
-  if( command == fChamMatCmd )
-   { fDetectorConstruction->SetChamberMaterial(newValue);}
-
-  if( command == fStepMaxCmd ) {
-    fDetectorConstruction
-      ->SetMaxStep(fStepMaxCmd->GetNewDoubleValue(newValue));
-  }
+    if (command == fStepMaxCmd) {
+        fDetectorConstruction->SetMaxStep(fStepMaxCmd->GetNewDoubleValue(newValue));
+    }
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-}
+}  // namespace B2a

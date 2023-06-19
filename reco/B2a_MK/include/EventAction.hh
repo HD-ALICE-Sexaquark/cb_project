@@ -34,21 +34,18 @@
 
 #include "globals.hh"
 
-namespace B2
-{
+namespace B2 {
 
-/// Event action class
-
-class EventAction : public G4UserEventAction
-{
-  public:
+// Event action class
+class EventAction : public G4UserEventAction {
+   public:
     EventAction() = default;
     ~EventAction() override = default;
 
-    void  BeginOfEventAction(const G4Event* ) override;
-    void    EndOfEventAction(const G4Event* ) override;
+    void BeginOfEventAction(const G4Event*) override;
+    void EndOfEventAction(const G4Event*) override;
 };
 
-}
+}  // namespace B2
 
 #endif

@@ -34,83 +34,70 @@
 
 #include "G4Event.hh"
 #include "G4EventManager.hh"
-#include "G4TrajectoryContainer.hh"
 #include "G4Trajectory.hh"
+#include "G4TrajectoryContainer.hh"
 #include "G4ios.hh"
 
-namespace B2
-{
+namespace B2 {
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+void EventAction::BeginOfEventAction(const G4Event*) {}
 
-void EventAction::BeginOfEventAction(const G4Event*)
-{}
+void EventAction::EndOfEventAction(const G4Event* event) {
+    // get number of stored trajectories
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+    G4TrajectoryContainer* trajectoryContainer = event->GetTrajectoryContainer();
+    G4int n_trajectories = 0;
+    if (trajectoryContainer) n_trajectories = trajectoryContainer->entries();
 
-void EventAction::EndOfEventAction(const G4Event* event)
-{
-  // get number of stored trajectories
+    // periodic printing
+    G4VHitsCollection* hc = event->GetHCofThisEvent()->GetHC(0);
 
-  G4TrajectoryContainer* trajectoryContainer = event->GetTrajectoryContainer();
-  G4int n_trajectories = 0;
-  if (trajectoryContainer) n_trajectories = trajectoryContainer->entries();
-
-  // periodic printing
-  G4VHitsCollection* hc = event->GetHCofThisEvent()->GetHC(0);
-
-  G4int eventID = event->GetEventID();
-  if ( eventID < 100 || eventID % 100 == 0) {
-    G4cout << ">>> Event: " << eventID  << G4endl;
-    if ( trajectoryContainer ) {
-      G4cout << "    " << n_trajectories
-             << " trajectories stored in this event." << G4endl;
+    G4int eventID = event->GetEventID();
+    if (eventID < 100 || eventID % 100 == 0) {
+        G4cout << ">>> Event: " << eventID << G4endl;
+        if (trajectoryContainer) {
+            G4cout << "    " << n_trajectories << " trajectories stored in this event." << G4endl;
+        }
+        G4cout << "    " << hc->GetSize() << " hits stored in this event" << G4endl;
     }
-    G4cout << "    "
-           << hc->GetSize() << " hits stored in this event" << G4endl;
-  }
 
-  std::map<G4int, G4double> InitialMomentum;
-  std::map<G4int, G4int> PDGcode;
+    std::map<G4int, G4double> InitialMomentum;
+    std::map<G4int, G4int> PDGcode;
 
-  for(G4int i=0; i<n_trajectories; i++) {
-  	G4int  trackID = (*trajectoryContainer)[i]->GetTrackID();
-  	double px = (*trajectoryContainer)[i]->GetInitialMomentum().x();
-  	double py = (*trajectoryContainer)[i]->GetInitialMomentum().y();
-  	double pz = (*trajectoryContainer)[i]->GetInitialMomentum().z();
-  	int pdg = (*trajectoryContainer)[i]->GetPDGEncoding();
-  	// G4cout << sqrt(px*px + py*py + pz*pz) << G4endl;
-  	InitialMomentum[trackID] = sqrt(px*px + py*py + pz*pz);
-  	PDGcode[trackID] = pdg;
-  }
+    for (G4int i = 0; i < n_trajectories; i++) {
+        G4int trackID = (*trajectoryContainer)[i]->GetTrackID();
+        double px = (*trajectoryContainer)[i]->GetInitialMomentum().x();
+        double py = (*trajectoryContainer)[i]->GetInitialMomentum().y();
+        double pz = (*trajectoryContainer)[i]->GetInitialMomentum().z();
+        int pdg = (*trajectoryContainer)[i]->GetPDGEncoding();
+        // G4cout << sqrt(px*px + py*py + pz*pz) << G4endl;
+        InitialMomentum[trackID] = sqrt(px * px + py * py + pz * pz);
+        PDGcode[trackID] = pdg;
+    }
 
-  auto analysisManager = G4AnalysisManager::Instance();
-  for (size_t i=0; i<hc->GetSize(); i++) {
+    auto analysisManager = G4AnalysisManager::Instance();
 
-    B2TrackerHit* th = (B2TrackerHit*) hc->GetHit(i);
-    analysisManager->FillNtupleIColumn(0, 0, eventID);
-    analysisManager->FillNtupleIColumn(0, 1, th->GetTrackID());
-    analysisManager->FillNtupleIColumn(0, 2, th->GetChamberNb());
-    analysisManager->FillNtupleDColumn(0, 3, th->GetPos().x());
-    analysisManager->FillNtupleDColumn(0, 4, th->GetPos().y());
-    analysisManager->FillNtupleDColumn(0, 5, th->GetPos().z() +3000 ); // m.kroesen's comment: shift because of geometry -- not aligned correctly
-    analysisManager->FillNtupleDColumn(0, 6, InitialMomentum[th->GetTrackID()]);
-    analysisManager->FillNtupleDColumn(0, 7, std::sqrt(th->GetMom().x()*th->GetMom().x() + th->GetMom().y()* th->GetMom().y() + th->GetMom().z()*th->GetMom().z()));
-    analysisManager->FillNtupleDColumn(0, 8, PDGcode[th->GetTrackID()]);
-    analysisManager->FillNtupleDColumn(0, 9, th->GetMom().x());
-    analysisManager->FillNtupleDColumn(0, 10, th->GetMom().y());
-    analysisManager->FillNtupleDColumn(0, 11, th->GetMom().z());
-    analysisManager->FillNtupleDColumn(0, 12, th->GetEdep());
+    for (size_t i = 0; i < hc->GetSize(); i++) {
+        B2TrackerHit* th = (B2TrackerHit*)hc->GetHit(i);
+        analysisManager->FillNtupleIColumn(0, 0, eventID);
+        analysisManager->FillNtupleIColumn(0, 1, th->GetTrackID());
+        analysisManager->FillNtupleIColumn(0, 2, th->GetChamberNb());
+        analysisManager->FillNtupleDColumn(0, 3, th->GetPos().x());
+        analysisManager->FillNtupleDColumn(0, 4, th->GetPos().y());
+        analysisManager->FillNtupleDColumn(
+            0, 5, th->GetPos().z() + 3000);  // m.kroesen's comment: shift because of geometry -- not aligned correctly
+        analysisManager->FillNtupleDColumn(0, 6, InitialMomentum[th->GetTrackID()]);
+        analysisManager->FillNtupleDColumn(
+            0, 7,
+            std::sqrt(th->GetMom().x() * th->GetMom().x() + th->GetMom().y() * th->GetMom().y() + th->GetMom().z() * th->GetMom().z()));
+        analysisManager->FillNtupleDColumn(0, 8, PDGcode[th->GetTrackID()]);
+        analysisManager->FillNtupleDColumn(0, 9, th->GetMom().x());
+        analysisManager->FillNtupleDColumn(0, 10, th->GetMom().y());
+        analysisManager->FillNtupleDColumn(0, 11, th->GetMom().z());
+        analysisManager->FillNtupleDColumn(0, 12, th->GetEdep());
 
-
-    analysisManager->AddNtupleRow(0);
-
-  }
-
-
+        analysisManager->AddNtupleRow(0);
+    }
 }
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-}
-
+}  // namespace B2

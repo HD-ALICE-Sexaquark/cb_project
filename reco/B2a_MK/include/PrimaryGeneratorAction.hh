@@ -36,36 +36,33 @@
 class G4ParticleGun;
 class G4Event;
 
-namespace B2
-{
+namespace B2 {
 
-/// The primary generator action class with particle gum.
+/// The primary generator action class with particle gun
 ///
 /// It defines a single particle which hits the Tracker
 /// perpendicular to the input face. The type of the particle
 /// can be changed via the G4 build-in commands of G4ParticleGun class
-/// (see the macros provided with this example).
+/// (see the macros provided with this example)
 
-class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
-{
-  public:
+class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
+   public:
     PrimaryGeneratorAction();
     ~PrimaryGeneratorAction() override;
 
-    void GeneratePrimaries(G4Event* ) override;
+    void GeneratePrimaries(G4Event*) override;
 
-    G4ParticleGun* GetBackgroundGun() {return fBackgroundGun;}
-    G4ParticleGun* GetSignalGun() {return fSignalGun;}
+    G4ParticleGun* GetBackgroundGun() { return fBackgroundGun; }
+    G4ParticleGun* GetSignalGun() { return fSignalGun; }
 
     // Set methods
-    void SetRandomFlag(G4bool );
+    void SetRandomFlag(G4bool);
 
-  private:
+   private:
     G4ParticleGun* fBackgroundGun = nullptr;
     G4ParticleGun* fSignalGun = nullptr;
-
 };
 
-}
+}  // namespace B2
 
 #endif

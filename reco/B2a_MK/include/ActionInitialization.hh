@@ -32,14 +32,12 @@
 
 #include "G4VUserActionInitialization.hh"
 
-namespace B2
-{
+namespace B2 {
 
-/// Action initialization class.
+/// Action initialization class
 
-class ActionInitialization : public G4VUserActionInitialization
-{
-  public:
+class ActionInitialization : public G4VUserActionInitialization {
+   public:
     ActionInitialization() = default;
     ~ActionInitialization() override = default;
 
@@ -47,8 +45,6 @@ class ActionInitialization : public G4VUserActionInitialization
     void Build() const override;
 };
 
-}
+}  // namespace B2
 
 #endif
-
-

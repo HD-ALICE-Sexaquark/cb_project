@@ -35,21 +35,19 @@
 
 class G4Run;
 
-namespace B2
-{
+namespace B2 {
 
-/// Run action class
+// Run action class
 
-class RunAction : public G4UserRunAction
-{
-  public:
+class RunAction : public G4UserRunAction {
+   public:
     RunAction();
     ~RunAction() override = default;
 
     void BeginOfRunAction(const G4Run* run) override;
-    void   EndOfRunAction(const G4Run* run) override;
+    void EndOfRunAction(const G4Run* run) override;
 };
 
-}
+}  // namespace B2
 
 #endif
