@@ -67,6 +67,7 @@ namespace B2
     std::vector<double> bkgPx, bkgPy, bkgPz;
 
     std::ifstream bkgFile("../bkg.dat");
+    // std::ifstream bkgFile(gun0vals); // PENDING: use Martin's string
     if (!bkgFile.is_open())
     {
       std::cout << "Error opening file" << std::endl;
@@ -126,8 +127,8 @@ namespace B2
       }
 
       fBackgroundGun->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle(bkgPdgCode[i]));
-      fBackgroundGun->SetParticleMomentum(G4ThreeVector(bkgPx[i] * GeV, bkgPy[i] * GeV, -bkgPz[i] * GeV)); // PENDING!
-      fBackgroundGun->SetParticlePosition(G4ThreeVector(0., 0., 0. - 300. * cm));                          // PENDING!
+      fBackgroundGun->SetParticleMomentum(G4ThreeVector(bkgPx[i] * GeV, bkgPy[i] * GeV, bkgPz[i] * GeV));
+      fBackgroundGun->SetParticlePosition(G4ThreeVector(0., 0., 0.));
 
       fBackgroundGun->GeneratePrimaryVertex(anEvent);
     }
@@ -200,8 +201,8 @@ namespace B2
     for (int i = 0; i < (int)sigStatus.size(); i++)
     {
       fSignalGun->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle(sigPdgCode[i]));
-      fSignalGun->SetParticleMomentum(G4ThreeVector(sigPx[i] * GeV, sigPy[i] * GeV, -sigPz[i] * GeV));          // PENDING!
-      fSignalGun->SetParticlePosition(G4ThreeVector(sigVx[i] * cm, sigVy[i] * cm, -sigVz[i] * cm)); // PENDING!
+      fSignalGun->SetParticleMomentum(G4ThreeVector(sigPx[i] * GeV, sigPy[i] * GeV, sigPz[i] * GeV));
+      fSignalGun->SetParticlePosition(G4ThreeVector(sigVx[i] * cm, sigVy[i] * cm, sigVz[i] * cm));
 
       fSignalGun->GeneratePrimaryVertex(anEvent);
     }
