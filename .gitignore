@@ -8,3 +8,4 @@ bkg_gen/pythia8309_src
 bkg_gen/main_fct
 **.log
 Makefile**
+output/
