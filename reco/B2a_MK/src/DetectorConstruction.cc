@@ -102,13 +102,15 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes() {
 
     /*** World ***/
 
-    G4double worldLength = 1000. * cm;
+    G4double worldLengthX = 250. * cm;
+    G4double worldLengthY = 250. * cm;
+    G4double worldLengthZ = 1000. * cm;
 
-    G4GeometryManager::GetInstance()->SetWorldMaximumExtent(worldLength);
+    G4GeometryManager::GetInstance()->SetWorldMaximumExtent(worldLengthZ);
 
     G4cout << "Computed tolerance = " << G4GeometryTolerance::GetInstance()->GetSurfaceTolerance() / mm << " mm" << G4endl;
 
-    auto worldS = new G4Box("world", 0.5 * worldLength, 0.5 * worldLength, 0.5 * worldLength);
+    auto worldS = new G4Box("world", 0.5 * worldLengthX, 0.5 * worldLengthY, 0.5 * worldLengthZ);
     auto worldLV = new G4LogicalVolume(worldS, air, "World");
 
     auto worldPV = new G4PVPlacement(nullptr,          // no rotation
@@ -120,75 +122,74 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes() {
                                      0,                // copy number
                                      fCheckOverlaps);  // checking overlaps
 
-    /*** Target (Conversion Plate) ***/
-
-    /*
-    // define dimensions
-    G4double targetLength = 5.0 * cm;
-    G4double targetRadius = 50. * cm;
-
-    // set position
-    G4ThreeVector targetPosition = G4ThreeVector(0, 0, - 0.5 * targetLength);
-
-    auto targetS = new G4Tubs("target", 0., 0.5 * targetRadius, 0.5 * targetLength, 0. * deg, 360. * deg);
-    fLogicTarget = new G4LogicalVolume(targetS, fTargetMaterial, "Target", nullptr, nullptr, nullptr);
-
-    new G4PVPlacement(nullptr,  // no rotation
-      targetPosition,           // (x,y,z) w.r.t. mother's volume center
-      fLogicTarget,             // its logical volume
-      "Target",                 // its name
-      worldLV,                  // its mother volume
-      false,                    // no boolean operations
-      0,                        // copy number
-      fCheckOverlaps);          // checking overlaps
-    */
-
     /*** Tracker (FCT) ***/
 
     // define dimensions
-    G4double trackerLength = 100. * cm;
+    G4double trackerLength = 260. * cm; // (don't forget to adjust this when changing targetZ!)
+    G4double trackerRadius = 60. * cm;
 
-    // set position w.r.t. world volume
-    G4ThreeVector trackerPosition = G4ThreeVector(0., 0., -450. * cm);
+    // set z-coordinate w.r.t. world volume
+    G4double trackerZ_initial = -500 * cm;
+    G4double trackerZ_final = trackerZ_initial + trackerLength;                        // -240 cm
+    G4double trackerZ = 0.5 * (trackerZ_final - trackerZ_initial) + trackerZ_initial;  // midpoint, -370 cm
 
-    auto trackerS = new G4Box("tracker", 0.5 * trackerLength, 0.5 * trackerLength, 0.5 * trackerLength);
+    // auto trackerS = new G4Box("tracker", 0.5 * trackerLength, 0.5 * trackerLength, 0.5 * trackerLength);
+    auto trackerS = new G4Tubs("tracker", 0., trackerRadius, 0.5 * trackerLength, 0. * deg, 360. * deg);
     auto trackerLV = new G4LogicalVolume(trackerS, air, "Tracker", nullptr, nullptr, nullptr);
 
-    new G4PVPlacement(nullptr,          // no rotation
-                      trackerPosition,  // (x,y,z) w.r.t. mother's volume center
-                      trackerLV,        // its logical volume
-                      "Tracker",        // its name
-                      worldLV,          // its mother volume
-                      false,            // no boolean operations
-                      0,                // copy number
-                      fCheckOverlaps);  // checking overlaps
+    new G4PVPlacement(nullptr,                          // no rotation
+                      G4ThreeVector(0., 0., trackerZ),  // (x,y,z) w.r.t. mother's volume center
+                      trackerLV,                        // its logical volume
+                      "Tracker",                        // its name
+                      worldLV,                          // its mother volume
+                      false,                            // no boolean operations
+                      0,                                // copy number
+                      fCheckOverlaps);                  // checking overlaps
+
+    /*** Target (Conversion Plate) ***/
+
+    // define dimensions
+    G4double targetLength = 0.03 * cm;  // 5 % material budget
+    G4double targetRadius = 44.1 * cm;
+
+    // z-coordinate w.r.t. world volume
+    G4double targetZ = -242. * cm;  // 2 m before the first layer
+
+    auto targetS = new G4Tubs("target", 0., targetRadius, 0.5 * targetLength, 0. * deg, 360. * deg);
+    fLogicTarget = new G4LogicalVolume(targetS, fTargetMaterial, "Target", nullptr, nullptr, nullptr);
+
+    new G4PVPlacement(nullptr,                                  // no rotation
+                      G4ThreeVector(0, 0, targetZ - trackerZ),  // (x,y,z) w.r.t. mother's volume (that's why it's displaced)
+                      fLogicTarget,                             // its logical volume
+                      "Target",                                 // its name
+                      trackerLV,                                // its mother volume
+                      false,                                    // no boolean operations
+                      0,                                        // copy number
+                      fCheckOverlaps);                          // checking overlaps
 
     /*** Tracker Segments / Chambers (FCT Layers) ***/
 
     G4double chamberWidth = 0.1 * cm;
 
-    G4double R_in[9] = {6. * cm, 6. * cm, 6. * cm, 6. * cm, 6.1 * cm, 6.2 * cm, 6.3 * cm, 6.5 * cm, 6.6 * cm};
-    G4double R_out[9] = {44.1 * cm, 44.3 * cm, 44.5 * cm, 44.7 * cm, 44.9 * cm, 45.9 * cm, 46.9 * cm, 47.9 * cm, 48.9 * cm};
-    G4double z_layer[9] = {-442. * cm, -444. * cm, -446. * cm, -448. * cm, -450. * cm, -460. * cm, -470. * cm, -480. * cm, -490. * cm};
+    G4double layerR_in[9] = {6. * cm, 6. * cm, 6. * cm, 6. * cm, 6.1 * cm, 6.2 * cm, 6.3 * cm, 6.5 * cm, 6.6 * cm};
+    G4double layerR_out[9] = {44.1 * cm, 44.3 * cm, 44.5 * cm, 44.7 * cm, 44.9 * cm, 45.9 * cm, 46.9 * cm, 47.9 * cm, 48.9 * cm};
+
+    // z-coordinates w.r.t. world volume
+    G4double layerZ[9] = {-442. * cm, -444. * cm, -446. * cm, -448. * cm, -450. * cm, -460. * cm, -470. * cm, -480. * cm, -490. * cm};
 
     for (G4int copyNo = 0; copyNo < fNbOfChambers; copyNo++) {
 
-        G4double rmax_in = R_in[copyNo];
-        G4double rmax_out = R_out[copyNo];
-        G4double Zposition = z_layer[copyNo];
-
-        auto chamberS = new G4Tubs("Chamber_solid", rmax_in, rmax_out, 0.5 * chamberWidth, 0. * deg, 360. * deg);
-
+        auto chamberS = new G4Tubs("Chamber_solid", layerR_in[copyNo], layerR_out[copyNo], 0.5 * chamberWidth, 0. * deg, 360. * deg);
         fLogicChamber[copyNo] = new G4LogicalVolume(chamberS, fChamberMaterial, "Layer_LV", nullptr, nullptr, nullptr);
 
-        new G4PVPlacement(nullptr,                                     // no rotation
-                          G4ThreeVector(0, 0, Zposition + 450. * cm),  // (x,y,z) w.r.t. mother volume
-                          fLogicChamber[copyNo],                       // its logical volume
-                          "Layer_PV_" + std::to_string(copyNo),        // its name
-                          trackerLV,                                   // its mother volume
-                          false,                                       // no boolean operations
-                          copyNo,                                      // copy number
-                          fCheckOverlaps);                             // checking overlaps
+        new G4PVPlacement(nullptr,                                         // no rotation
+                          G4ThreeVector(0, 0, layerZ[copyNo] - trackerZ),  // (x,y,z) w.r.t. mother volume (that's why it's displaced)
+                          fLogicChamber[copyNo],                           // its logical volume
+                          "Layer_PV_" + std::to_string(copyNo),            // its name
+                          trackerLV,                                       // its mother volume
+                          false,                                           // no boolean operations
+                          copyNo,                                          // copy number
+                          fCheckOverlaps);                                 // checking overlaps
     }
 
     /*** Visualization Attributes ***/
@@ -198,7 +199,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes() {
 
     worldLV->SetVisAttributes(boxVisAtt);
     trackerLV->SetVisAttributes(boxVisAtt);
-    // fLogicTarget->SetVisAttributes(chamberVisAtt);
+    fLogicTarget->SetVisAttributes(chamberVisAtt);
     for (G4int copyNo = 0; copyNo < fNbOfChambers; copyNo++) {
         fLogicChamber[copyNo]->SetVisAttributes(chamberVisAtt);
     }
@@ -239,7 +240,7 @@ void DetectorConstruction::ConstructSDandField() {
     // Create global magnetic field messenger.
     // Uniform magnetic field is then created automatically if
     // the field value is not zero.
-    G4ThreeVector fieldValue = G4ThreeVector(0., 0., 0.5 * tesla);
+    G4ThreeVector fieldValue = G4ThreeVector(0., 0.5 * tesla, 0.);
     fMagFieldMessenger = new G4GlobalMagFieldMessenger(fieldValue);
     fMagFieldMessenger->SetVerboseLevel(1);
 

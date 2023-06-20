@@ -63,7 +63,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     std::vector<int> bkgStatus, bkgPdgCode, bkgFirstDau, bkgLastDau;
     std::vector<double> bkgPx, bkgPy, bkgPz;
 
-    std::ifstream bkgFile("../bkg.dat");
+    std::ifstream bkgFile("../bkg.csv");
     // std::ifstream bkgFile(gun0vals); // PENDING: use Martin's string
     if (!bkgFile.is_open()) {
         std::cout << "Error opening file" << std::endl;
@@ -134,7 +134,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     std::vector<double> sigPx, sigPy, sigPz;
     std::vector<double> sigVx, sigVy, sigVz;
 
-    std::ifstream sigFile("../signal.dat");
+    std::ifstream sigFile("../signal.csv");
     if (!sigFile.is_open()) {
         std::cout << "Error opening file" << std::endl;
         return;
