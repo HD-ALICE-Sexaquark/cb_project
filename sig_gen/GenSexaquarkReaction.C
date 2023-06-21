@@ -126,6 +126,19 @@ void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
 
         Int_t IsSignal = 1;
 
+        // check if reaction products (the V0 pair) also belong to the theta cut,
+        // otherwise, try again
+        Bool_t doProductsReachFCT = kTRUE;
+        for (Int_t i = 0; i < (Int_t)fDecayChannelPDG.size(); i++) {
+            doProductsReachFCT =
+                doProductsReachFCT && fThetaMin < Generator.GetDecay(i)->Theta() && Generator.GetDecay(i)->Theta() < fThetaMax;
+        }
+        if (!doProductsReachFCT) {
+            printf(">> Not all of the reaction products reach the FCT. Trying again...\n");
+            evt--;
+            continue;
+        }
+
         TString auxStr;
 
         // get 4-momentum vectors of the reaction products and put them on the Geant stack
