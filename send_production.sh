@@ -76,7 +76,12 @@ function get_num_3dig() {
 # # # # # # # #
 
 function generate_bkg() {
-    echo "... WIP ..."
+    BKG_CFG=config_pp.cmnd
+    BKG_LOG=${str_run}_bkg.log
+    # modify number of events in config file
+    sed -i "s|Main:numberOfEvents = 1|Main:numberOfEvents = ${N_EVENTS_PER_RUN}|g" ${BKG_CFG}
+    # the loop and setting of filenames are done internally
+    ./main_fct ${BKG_CFG} &> ${BKG_LOG} &
 }
 
   ##
@@ -87,9 +92,9 @@ function generate_signal() {
     # generate one run of signal interactions
     for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do
         str_event="$(get_num_3dig ${event})"
-        SIGNAL_CSV=${1}/event${str_event}_sig.csv
-        SIGNAL_LOG=${1}/event${str_event}_sig.log
-        root -l -b -q 'GenSexaquarkReaction.C("'${SIGNAL_CSV}'")' &> ${SIGNAL_LOG} &
+        SIGNAL_CSV=event${str_event}_sig.csv
+        SIGNAL_LOG=${str_run}_sig.log
+        root -l -b -q 'GenSexaquarkReaction.C("'${SIGNAL_CSV}'")' &>> ${SIGNAL_LOG} &
     done
 }
 
@@ -98,7 +103,26 @@ function generate_signal() {
 # # # # # # # # # #
 
 function do_reconstruction() {
-    echo "... WIP ..."
+    # wait until all files are ready
+    while true; do
+        # count signal and bkg files
+        N_SIG_FILES=$(ls -1 event*_sig.csv 2> /dev/null | wc -l)
+        N_BKG_FILES=$(ls -1 event*_bkg.csv 2> /dev/null | wc -l)
+        if [[ ${N_SIG_FILES} -eq ${N_EVENTS_PER_RUN} ]] && [[ ${N_BKG_FILES} -eq ${N_EVENTS_PER_RUN} ]]; then
+            break
+        fi
+        # wait 1 second until next iteration
+        sleep 1
+    done
+    echo "send_production.sh :: all files done, now we can proceed with the reconstruction"
+    # start reconstruction process
+    for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do
+        str_event="$(get_num_3dig ${event})"
+        SIGNAL_CSV=event${str_event}_sig.csv
+        BKG_CSV=event${str_event}_bkg.csv
+        RECO_LOG=${str_run}_reco.log
+        ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} &> ${RECO_LOG} & # PENDING
+    done
 }
 
   ##
@@ -173,12 +197,23 @@ for run in ${RUN_NUMBER_ARR[@]}; do
     # enter run dir
     cd ${RUN_DIR}
 
-    # prepare necessary files
+    # prepare necessary files:
+    # - of background generator
+    cp ${SIM_DIR}/bkg_gen/config_pp.cmnd config_pp.cmnd
+    if [[ -e ${SIM_DIR}/bkg_gen/main_fct ]] ; then
+        cp ${SIM_DIR}/bkg_gen/main_fct main_fct
+    else
+        echo "ERROR: make sure to compile the bkg generator first"
+        exit 1
+    fi
+    # - of signal generator
     cp ${SIM_DIR}/sig_gen/GenSexaquarkReaction.C GenSexaquarkReaction.C
+    # - of reconstruction
+    cp ${SIM_DIR}/reco/B2a_MK_build/exampleB2a exampleB2a
 
     if [[ ${INT_MODE} -eq 1 ]]; then
-        generate_signal "${RUN_DIR}"
-        # generate_bkg "${OUTDIR}"
+        generate_signal
+        generate_bkg
         # do_reconstruction "${OUTDIR}"
     else
         echo "... WIP ..."
