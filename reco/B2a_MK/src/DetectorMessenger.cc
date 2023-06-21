@@ -34,7 +34,8 @@
 #include "G4UIcmdWithAString.hh"
 #include "G4UIdirectory.hh"
 
-extern std::string gun0vals;
+extern std::string signal_file;
+extern std::string bkg_file;
 
 namespace B2a {
 
@@ -46,11 +47,17 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* det) : fDetectorConst
     fDetDirectory->SetGuidance("Detector construction control");
 
     fFCT = new G4UIdirectory("/FCT/");
-    fFCT->SetGuidance("FCT  guide");
-    fFCTCmd = new G4UIcmdWithAString("/FCT/guncmd", this);
-    fFCTCmd->SetGuidance("Select gun ops");
-    fFCTCmd->SetParameterName("GUN", false);
-    fFCTCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+    fFCT->SetGuidance("Sexaquark-FCT related options");
+
+    fSignalFileCmd = new G4UIcmdWithAString("/FCT/signal_file", this);
+    fSignalFileCmd->SetGuidance("Select signal input file");
+    fSignalFileCmd->SetParameterName("GUN", false);
+    fSignalFileCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fBkgFileCmd = new G4UIcmdWithAString("/FCT/bkg_file", this);
+    fBkgFileCmd->SetGuidance("Select background input file");
+    fBkgFileCmd->SetParameterName("GUN", false);
+    fBkgFileCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
     fTargMatCmd = new G4UIcmdWithAString("/B2/det/setTargetMaterial", this);
     fTargMatCmd->SetGuidance("Select Material of the Target.");
@@ -76,13 +83,18 @@ DetectorMessenger::~DetectorMessenger() {
     delete fDirectory;
     delete fDetDirectory;
 
-    delete fFCTCmd;
     delete fFCT;
+    delete fSignalFileCmd;
+    delete fBkgFileCmd;
 }
 
 void DetectorMessenger::SetNewValue(G4UIcommand* command, G4String newValue) {
-    if (command == fFCTCmd) {
-        gun0vals = newValue;
+    if (command == fSignalFileCmd) {
+        signal_file = newValue;
+    }
+
+    if (command == fBkgFileCmd) {
+        bkg_file = newValue;
     }
 
     if (command == fTargMatCmd) {

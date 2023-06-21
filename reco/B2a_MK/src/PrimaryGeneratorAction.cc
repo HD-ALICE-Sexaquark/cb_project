@@ -39,7 +39,8 @@
 #include "G4SystemOfUnits.hh"
 #include "Randomize.hh"
 
-extern std::string gun0vals;
+extern std::string signal_file;
+extern std::string bkg_file;
 
 namespace B2 {
 
@@ -60,11 +61,13 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
 
     /* Read CSV file */
 
-    std::vector<int> bkgStatus, bkgPdgCode, bkgFirstDau, bkgLastDau;
+    std::vector<int> bkgStatus, bkgPdgCode, bkgMotherPdgCode;
     std::vector<double> bkgPx, bkgPy, bkgPz;
 
-    std::ifstream bkgFile("../bkg.csv");
-    // std::ifstream bkgFile(gun0vals); // PENDING: use Martin's string
+    std::string input_bkg_file = "../bkg.csv"; // default test value
+    if (bkg_file != "") input_bkg_file = bkg_file;
+
+    std::ifstream bkgFile(input_bkg_file);
     if (!bkgFile.is_open()) {
         std::cout << "Error opening file" << std::endl;
         return;
@@ -88,10 +91,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
         bkgPdgCode.push_back(std::stoi(token));
 
         std::getline(iss, token, ',');
-        bkgFirstDau.push_back(std::stoi(token));
-
-        std::getline(iss, token, ',');
-        bkgLastDau.push_back(std::stoi(token));
+        bkgMotherPdgCode.push_back(std::stoi(token));
 
         std::getline(iss, token, ',');
         bkgPx.push_back(std::stod(token));
@@ -134,7 +134,10 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     std::vector<double> sigPx, sigPy, sigPz;
     std::vector<double> sigVx, sigVy, sigVz;
 
-    std::ifstream sigFile("../signal.csv");
+    std::string input_signal_file = "../signal.csv"; // default test value
+    if (signal_file != "") input_signal_file = signal_file;
+
+    std::ifstream sigFile(input_signal_file);
     if (!sigFile.is_open()) {
         std::cout << "Error opening file" << std::endl;
         return;

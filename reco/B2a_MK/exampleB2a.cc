@@ -41,7 +41,8 @@
 #include "G4UIExecutive.hh"
 #include "G4VisExecutive.hh"
 
-std::string gun0vals = "";
+std::string signal_file = "";
+std::string bkg_file = "";
 
 int main(int argc, char** argv) {
     // Detect interactive mode (if no arguments) and define UI session
@@ -82,9 +83,22 @@ int main(int argc, char** argv) {
     // Process macro or start UI session
     if (!ui) {
         // batch mode
-        G4String command = "/control/execute ";
-        G4String fileName = argv[1];
-        UImanager->ApplyCommand(command + fileName);
+        G4String signalFileName;
+        G4String bkgFileName;
+        if (argc == 3) {
+            signalFileName = argv[1];
+            bkgFileName = argv[2];
+        } if (argc == 2) {
+            signalFileName = "event" + (G4String)argv[1] + "_sig.csv";
+            bkgFileName = "event" + (G4String)argv[1] + "_bkg.csv";
+        } else {
+            return 1;
+        }
+        UImanager->ApplyCommand("/FCT/signal_file " + signalFileName);
+        UImanager->ApplyCommand("/FCT/bkg_file " + bkgFileName);
+        UImanager->ApplyCommand("/run/initialize");
+        UImanager->ApplyCommand("/tracking/verbose 1");
+        UImanager->ApplyCommand("/run/beamOn 1");
     } else {
         // interactive mode
         UImanager->ApplyCommand("/control/execute init_vis.mac");
