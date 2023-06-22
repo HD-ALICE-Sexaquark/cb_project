@@ -31,7 +31,8 @@ std::vector<std::vector<Int_t>> kSexaquarkProtonProducts = {{-3122, 321},       
 void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
     //
     // Based on "AliRoot/EVGEN/AliGenSexaquarkReaction"
-    // Generator of Sexaquark-nucleon interactions
+    // Generator of Sexaquark-nucleon interactions in the ALICE 3 Central Barrel
+    //
 
     // define output file
     std::ofstream fOutputFile;
@@ -47,13 +48,26 @@ void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
     // params
     Float_t fPtMin = 0.;
     Float_t fPtMax = 5.;
-    Float_t fThetaMin = TMath::Pi() - TMath::ASin(0.45 / 4.5);  // R_max of layer (in m) / z of layer 0 (in m)
-    Float_t fThetaMax = TMath::Pi() - TMath::ASin(0.05 / 4.5);  // R_min of layer (in m) / z of layer 0 (in m)
+    Float_t fThetaMin = 0.439;                    // (in rad) ~ 25.15 rad ~ eta = 1.5
+    Float_t fThetaMax = TMath::Pi() - fThetaMin;  // (in rad) ~ 154.84 deg ~ eta = -1.5
     Float_t fPhiMin = 0. * TMath::DegToRad();
     Float_t fPhiMax = 360. * TMath::DegToRad();
-    Float_t fDeltaZ = 0.03;                 // width of the conversion plate (in cm)
-    Float_t fZMin = -242. - 0.5 * fDeltaZ;  // location of the conversion plate (in cm)
-    Float_t fZMax = -242. + 0.5 * fDeltaZ;  // (in cm)
+
+    // fill layers information
+    const Int_t NLayers = 11;
+    const Double_t fLayerThickness[NLayers] = {0.01, 0.01, 0.01, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};    // (in cm)
+    const Double_t fLayerLength[NLayers] = {50., 50., 50., 124., 124., 124., 124., 124., 264., 264., 264.};  // (in cm)
+    const Double_t fLayerR[NLayers] = {0.5, 1.2, 2.5, 3.75, 7., 12., 20., 30., 45., 60., 80.};               // (in cm)
+    Float_t fRadiusMin[NLayers];
+    Float_t fRadiusMax[NLayers];
+    Float_t fZMin[NLayers];
+    Float_t fZMax[NLayers];
+    for (Int_t l = 0; l < NLayers; l++) {
+        fRadiusMin[l] = fLayerR[l] - 0.5 * fLayerThickness[l];
+        fRadiusMax[l] = fLayerR[l] + 0.5 * fLayerThickness[l];
+        fZMin[l] = -0.5 * fLayerLength[l];
+        fZMax[l] = 0.5 * fLayerLength[l];
+    }
 
     // (debug)
     printf("\n>> Chosen nucleon: %i\n", fNucleonPDG);
@@ -68,9 +82,8 @@ void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
     printf("   %.2f < Pt < %.2f GeV/c\n", fPtMin, fPtMax);
     printf("   %.2f < Theta < %.2f degrees <=> %.2f < Theta < %.2f rad\n",  //
            fThetaMin * TMath::RadToDeg(), fThetaMax * TMath::RadToDeg(), fThetaMin, fThetaMax);
-    printf("   %.2f < Phi < %.2f degrees <=> %.2f < Phi < %.2f rad\n",      //
+    printf("   %.2f < Phi < %.2f degrees <=> %.2f < Phi < %.2f rad\n\n",    //
            fPhiMin * TMath::RadToDeg(), fPhiMax * TMath::RadToDeg(), fPhiMin, fPhiMax);
-    printf("   %.2f < Z < %.2f cm\n\n", fZMin, fZMax);
 
     // (loop)
     for (Int_t evt = 0; evt < N; evt++) {
@@ -78,34 +91,49 @@ void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
 
         // prepare random numbers
         gRandom->SetSeed(0);
-        Float_t fRandom[4];
-        gRandom->RndmArray(4, fRandom);
+        Float_t fRandom[5];
+        gRandom->RndmArray(5, fRandom);
 
-        // set Sexaquark momentum
-        Float_t Pt_S = fPtMin + fRandom[0] * (fPtMax - fPtMin);              // pt (uniform distribution) in GeV/c
+        // set sexaquark
+        Float_t Pt_S = fPtMin + fRandom[0] * (fPtMax - fPtMin);              // pt (uniform distribution) (in GeV/c)
         Float_t Theta_S = fThetaMin + fRandom[1] * (fThetaMax - fThetaMin);  // polar angle (uniform distribution) in radians
         Float_t Eta_S = -TMath::Log(TMath::Tan(Theta_S / 2));                // eta
         Float_t Phi_S = fPhiMin + fRandom[2] * (fPhiMax - fPhiMin);          // azimuthal angle (uniform distribution) (in radians)
-        Float_t M_S = MASS_SEXAQUARK;                                        // mass of the sexaquark in GeV/c^2
+        Float_t M_S = MASS_SEXAQUARK;                                        // mass of the sexaquark (in GeV/c^2)
         TLorentzVector Sexaquark;
         Sexaquark.SetPtEtaPhiM(Pt_S, Eta_S, Phi_S, M_S);
 
+        printf(">> Generated Sexaquark:\n");
+        printf("   Pt = %.2f GeV/c\n", Pt_S);
+        printf("   Theta = %.2f deg = %.2f rad\n", Theta_S * TMath::RadToDeg(), Theta_S);
+        printf("   Eta = %.2f\n", Eta_S);
+        printf("   Phi = %.2f deg = %.2f rad\n", Phi_S * TMath::RadToDeg(), Phi_S);
+        printf("   Mass = %.2f\n\n", M_S);
+
         // (in case you want to) constrain momentum instead of pt
         /*
-        Float_t P_S = fMomentumMin + fRandom[0] * (fMomentumMax - fMomentumMin);  // momentum (uniform distribution) in GeV/c
-        Float_t Px_S = P_S * TMath::Sin(Theta_S) * TMath::Cos(Phi_S);             // px in GeV/c
-        Float_t Py_S = P_S * TMath::Sin(Theta_S) * TMath::Sin(Phi_S);             // py in GeV/c
-        Float_t Pt_S = TMath::Sqrt(Px_S * Px_S + Py_S * Py_S);  // pt in GeV/c
+        Float_t P_S = fMomentumMin + fRandom[0] * (fMomentumMax - fMomentumMin);  // momentum (uniform distribution) (in GeV/c)
+        Float_t Px_S = P_S * TMath::Sin(Theta_S) * TMath::Cos(Phi_S);             // px (in GeV/c)
+        Float_t Py_S = P_S * TMath::Sin(Theta_S) * TMath::Sin(Phi_S);             // py (in GeV/c)
+        Float_t Pt_S = TMath::Sqrt(Px_S * Px_S + Py_S * Py_S);  // pt (in GeV/c)
         */
 
         // set secondary vertex
-        // let's start the transformation, we already have
-        Float_t Vz_S = fZMin + fRandom[3] * (fZMax - fZMin);                  // z, in both cartesian and cylindrical coordinates, in cm
-        Float_t Radius_S = TMath::Sin(TMath::Pi() - Theta_S) * Vz_S;          // 2D Radius -- radius in cylindrical coordinates, in cm
-        Float_t Radius3D_S = TMath::Sqrt(Radius_S * Radius_S + Vz_S * Vz_S);  // 3D Radius -- radius in spherical coordinates, in cm
+        Int_t Layer_S = gRandom->Integer(NLayers);                                                          // layer
+        Float_t Vz_S = fZMin[Layer_S] + fRandom[3] * (fZMax[Layer_S] - fZMin[Layer_S]);                     // z (in cm)
+        Float_t Radius_S = fRadiusMin[Layer_S] + fRandom[4] * (fRadiusMax[Layer_S] - fRadiusMin[Layer_S]);  // 2D Radius (in cm)
+        Float_t Radius3D_S = TMath::Sqrt(Radius_S * Radius_S + Vz_S * Vz_S);                                // 3D Radius (in cm)
         Float_t Vx_S = Radius3D_S * TMath::Sin(Theta_S) * TMath::Cos(Phi_S);  // x, in cartesian coordinates, in cm
         Float_t Vy_S = Radius3D_S * TMath::Sin(Theta_S) * TMath::Sin(Phi_S);  // y, in cartesian coordinates, in cm
         TVector3 SecondaryVertex(Vx_S, Vy_S, Vz_S);
+
+        printf(">> Secondary Vertex:\n");
+        printf("   Layer = %i\n", Layer_S);
+        printf("   2D Radius = %.2f cm\n", Radius_S);
+        printf("   3D Radius = %.2f cm\n", Radius3D_S);
+        printf("   X = %.2f cm\n", Vx_S);
+        printf("   Y = %.2f cm\n", Vy_S);
+        printf("   Z = %.2f cm\n\n", Vz_S);
 
         // create array of masses (must be a double)
         Double_t DecayChannelMasses[(Int_t)fDecayChannelPDG.size()];
@@ -134,7 +162,7 @@ void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
                 doProductsReachFCT && fThetaMin < Generator.GetDecay(i)->Theta() && Generator.GetDecay(i)->Theta() < fThetaMax;
         }
         if (!doProductsReachFCT) {
-            printf(">> Not all of the reaction products reach the FCT. Trying again...\n");
+            printf(">> Not all of the reaction products obey the cut in theta. Trying again...\n");
             evt--;
             continue;
         }
@@ -144,7 +172,7 @@ void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
         // get 4-momentum vectors of the reaction products and put them on the Geant stack
         for (Int_t i = 0; i < (Int_t)fDecayChannelPDG.size(); i++) {
 
-            auxStr = Form("666,%i,0,0,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e\n",                                           //
+            auxStr = Form("666,%i,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e\n",                                               //
                           fDecayChannelPDG[i],                                                                    //
                           Generator.GetDecay(i)->Px(), Generator.GetDecay(i)->Py(), Generator.GetDecay(i)->Pz(),  //
                           Vx_S, Vy_S, Vz_S);
