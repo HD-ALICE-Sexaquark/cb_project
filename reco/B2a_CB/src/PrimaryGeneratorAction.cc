@@ -91,9 +91,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
         bkgPdgCode.push_back(std::stoi(token));
 
         std::getline(iss, token, ',');
-        bkgMotherPdgCode.push_back(std::stoi(token));
-
-        std::getline(iss, token, ',');
         bkgPx.push_back(std::stod(token));
 
         std::getline(iss, token, ',');
@@ -104,9 +101,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     }
 
     bkgFile.close();
-
-    // (debug)
-    // printf("HEREEE %i %f %f %f\n", bkgPdgCode[0], bkgPx[0], bkgPy[0], bkgPz[0]);
 
     /* Gun */
 
@@ -157,12 +151,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
 
         std::getline(iss, token, ',');
         sigPdgCode.push_back(std::stoi(token));
-
-        std::getline(iss, token, ',');
-        sigFirstDau.push_back(std::stoi(token));
-
-        std::getline(iss, token, ',');
-        sigLastDau.push_back(std::stoi(token));
 
         std::getline(iss, token, ',');
         sigPx.push_back(std::stod(token));
