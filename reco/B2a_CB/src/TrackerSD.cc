@@ -26,18 +26,29 @@
 //
 /// \file B2/B2a/src/TrackerSD.cc
 /// \brief Implementation of the B2::TrackerSD class
+// SD is for Sensitive Detector
 
 #include "TrackerSD.hh"
+
 #include "G4HCofThisEvent.hh"
 #include "G4SDManager.hh"
 #include "G4Step.hh"
 #include "G4ThreeVector.hh"
+#include "G4VProcess.hh"
 #include "G4ios.hh"
 
 namespace B2 {
 
-TrackerSD::TrackerSD(const G4String& name, const G4String& hitsCollectionName) : G4VSensitiveDetector(name) {
+TrackerSD::TrackerSD(const G4String& name, const G4String& hitsCollectionName)
+    : G4VSensitiveDetector(name),  //
+      fHitsCollection(nullptr) {
     collectionName.insert(hitsCollectionName);
+}
+
+TrackerSD::~TrackerSD() {
+    //
+    //
+    //
 }
 
 void TrackerSD::Initialize(G4HCofThisEvent* hce) {
@@ -53,20 +64,26 @@ void TrackerSD::Initialize(G4HCofThisEvent* hce) {
 
 G4bool TrackerSD::ProcessHits(G4Step* aStep, G4TouchableHistory*) {
     // energy deposit
-    G4double edep = aStep->GetTotalEnergyDeposit();
 
+    G4double edep = aStep->GetTotalEnergyDeposit();
     if (edep == 0.) return false;
 
-    auto newHit = new TrackerHit();
+    TrackerHit* newHit = new TrackerHit();
 
     newHit->SetTrackID(aStep->GetTrack()->GetTrackID());
     newHit->SetChamberNb(aStep->GetPreStepPoint()->GetTouchableHandle()->GetCopyNumber());
     newHit->SetEdep(edep);
-    newHit->SetPos(aStep->GetPostStepPoint()->GetPosition());
+    newHit->SetMomentum(aStep->GetPostStepPoint()->GetMomentum());
+    newHit->SetPosition(aStep->GetPostStepPoint()->GetPosition());
+
+    const G4VProcess* process = aStep->GetTrack()->GetCreatorProcess();
+    if (process) {
+        newHit->SetProcess(process->GetProcessName());
+    } else {
+        newHit->SetProcess("Unknown");
+    }
 
     fHitsCollection->insert(newHit);
-
-    // newHit->Print();
 
     return true;
 }
@@ -75,7 +92,7 @@ void TrackerSD::EndOfEvent(G4HCofThisEvent*) {
     if (verboseLevel > 1) {
         G4int nofHits = fHitsCollection->entries();
         G4cout << G4endl << "-------->Hits Collection: in this event they are " << nofHits << " hits in the tracker chambers: " << G4endl;
-        for (G4int i = 0; i < nofHits; i++) (*fHitsCollection)[i]->Print();
+        // for (G4int i = 0; i < nofHits; i++) (*fHitsCollection)[i]->Print();
     }
 }
 

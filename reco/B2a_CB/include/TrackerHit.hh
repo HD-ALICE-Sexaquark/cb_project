@@ -42,57 +42,66 @@ namespace B2 {
 ///
 /// It defines data members to store the trackID, chamberNb, energy deposit, momentum
 /// and position of charged particles in a selected volume:
-/// - fTrackID, fChamberNB, fEdep, fMom, fPos
+/// - fTrackID, fChamberNB, fEdep, fMom, fPosition, fProcess
 
 class TrackerHit : public G4VHit {
    public:
-    TrackerHit() = default;
-    TrackerHit(const TrackerHit&) = default;
-    ~TrackerHit() override = default;
+    TrackerHit();
+    TrackerHit(const TrackerHit&);
+    virtual ~TrackerHit();
 
     // operators
-    TrackerHit& operator=(const TrackerHit&) = default;
+    const TrackerHit& operator=(const TrackerHit&);
     G4bool operator==(const TrackerHit&) const;
 
     inline void* operator new(size_t);
     inline void operator delete(void*);
 
     // methods from base class
-    void Draw() override;
-    void Print() override;
+    virtual void Draw();
+    virtual void Print();
 
     // Set methods
     void SetTrackID(G4int track) { fTrackID = track; };
     void SetChamberNb(G4int chamb) { fChamberNb = chamb; };
+    void SetMomentum(G4ThreeVector pxpypz) { fMomentum = pxpypz; };
     void SetEdep(G4double de) { fEdep = de; };
-    void SetMom(G4ThreeVector pxpypz) { fMom = pxpypz; };
-    void SetPos(G4ThreeVector xyz) { fPos = xyz; };
+    void SetPosition(G4ThreeVector xyz) { fPosition = xyz; };
+    void SetProcess(G4String process) { fProcess = process; };
 
     // Get methods
     G4int GetTrackID() const { return fTrackID; };
     G4int GetChamberNb() const { return fChamberNb; };
+    G4ThreeVector GetMomentum() const { return fMomentum; };
     G4double GetEdep() const { return fEdep; };
-    G4ThreeVector GetMom() const { return fMom; };
-    G4ThreeVector GetPos() const { return fPos; };
+    G4ThreeVector GetPosition() const { return fPosition; };
+    const G4String& GetProcess() const { return fProcess; };
 
    private:
-    G4int fTrackID = -1;
-    G4int fChamberNb = -1;
-    G4double fEdep = 0.;
-    G4ThreeVector fMom;
-    G4ThreeVector fPos;
+    G4int fTrackID;
+    G4int fChamberNb;
+    G4ThreeVector fMomentum;
+    G4double fEdep;
+    G4ThreeVector fPosition;
+    G4String fProcess;
 };
 
-using TrackerHitsCollection = G4THitsCollection<TrackerHit>;
+typedef G4THitsCollection<TrackerHit> TrackerHitsCollection;
+// using TrackerHitsCollection = G4THitsCollection<TrackerHit>;
 
 extern G4ThreadLocal G4Allocator<TrackerHit>* TrackerHitAllocator;
 
 inline void* TrackerHit::operator new(size_t) {
-    if (!TrackerHitAllocator) TrackerHitAllocator = new G4Allocator<TrackerHit>;
+    if (!TrackerHitAllocator) {
+        TrackerHitAllocator = new G4Allocator<TrackerHit>;
+    }
     return (void*)TrackerHitAllocator->MallocSingle();
 }
 
-inline void TrackerHit::operator delete(void* hit) { TrackerHitAllocator->FreeSingle((TrackerHit*)hit); }
+inline void TrackerHit::operator delete(void* hit) {
+    //
+    TrackerHitAllocator->FreeSingle((TrackerHit*)hit);
+}
 
 }  // namespace B2
 
