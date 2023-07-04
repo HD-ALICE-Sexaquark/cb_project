@@ -64,7 +64,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     std::vector<int> bkgStatus, bkgPdgCode, bkgMotherPdgCode;
     std::vector<double> bkgPx, bkgPy, bkgPz;
 
-    std::string input_bkg_file = "../bkg.csv"; // default test value
+    G4String input_bkg_file = "../bkg.csv";  // default test value
     if (bkg_file != "") input_bkg_file = bkg_file;
 
     std::ifstream bkgFile(input_bkg_file);
@@ -128,7 +128,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     std::vector<double> sigPx, sigPy, sigPz;
     std::vector<double> sigVx, sigVy, sigVz;
 
-    std::string input_signal_file = "../signal.csv"; // default test value
+    G4String input_signal_file = "../signal.csv";  // default test value
     if (signal_file != "") input_signal_file = signal_file;
 
     std::ifstream sigFile(input_signal_file);
@@ -143,9 +143,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
 
         // Read each column separated by commas
         std::getline(iss, token, ',');
-
-        // (debug)
-        std::cout << "TOKEN: " << token << std::endl;
 
         sigStatus.push_back(std::stoi(token));
 
@@ -172,9 +169,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     }
 
     sigFile.close();
-
-    // (debug)
-    printf("HEREEE %i %f %f %f\n", sigPdgCode[0], sigPx[0], sigPy[0], sigPz[0]);
 
     /* Gun */
 

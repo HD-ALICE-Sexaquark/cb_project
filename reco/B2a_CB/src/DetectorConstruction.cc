@@ -154,7 +154,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes() {
 
     for (G4int copyNo = 0; copyNo < fNbOfChambers; copyNo++) {
 
-        auto chamberS = new G4Tubs("Chamber_solid",                                //
+        auto chamberS = new G4Tubs("Chamber_solid",                                // name
                                    layerR[copyNo] - 0.5 * layerThickness[copyNo],  // inner radius
                                    layerR[copyNo] + 0.5 * layerThickness[copyNo],  // outer radius
                                    0.5 * layerLength[copyNo],                      // length in z
