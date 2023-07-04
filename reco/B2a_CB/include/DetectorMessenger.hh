@@ -64,8 +64,10 @@ class DetectorMessenger : public G4UImessenger {
 
     G4UIcmdWithAString* fTargMatCmd = nullptr;
     G4UIcmdWithAString* fChamMatCmd = nullptr;
+
     G4UIcmdWithAString* fSignalFileCmd = nullptr;
     G4UIcmdWithAString* fBkgFileCmd = nullptr;
+    G4UIcmdWithAString* fOutputFileCmd = nullptr;
 
     G4UIcmdWithADoubleAndUnit* fStepMaxCmd = nullptr;
 };

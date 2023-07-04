@@ -30,7 +30,7 @@
 #include "EventAction.hh"
 
 #include "B2Analysis.hh"
-#include "B2TrackerHit.hh"
+#include "TrackerHit.hh"
 
 #include "G4Event.hh"
 #include "G4EventManager.hh"
@@ -38,13 +38,18 @@
 #include "G4TrajectoryContainer.hh"
 #include "G4ios.hh"
 
+extern std::string output_file;
+
 namespace B2 {
 
 void EventAction::BeginOfEventAction(const G4Event*) {}
 
 void EventAction::EndOfEventAction(const G4Event* event) {
-    // get number of stored trajectories
+    // get important objects
+    auto eventManager = G4EventManager::GetEventManager();
+    auto analysisManager = G4AnalysisManager::Instance();
 
+    // get number of stored trajectories
     G4TrajectoryContainer* trajectoryContainer = event->GetTrajectoryContainer();
     G4int n_trajectories = 0;
     if (trajectoryContainer) n_trajectories = trajectoryContainer->entries();
@@ -62,29 +67,30 @@ void EventAction::EndOfEventAction(const G4Event* event) {
         G4cout << "    " << n_hits << " hits stored" << G4endl;
     }
 
-    // get important objects
-    auto eventManager = G4EventManager::GetEventManager();
-    auto analysisManager = G4AnalysisManager::Instance();
-
     // count how many hits a trajectory had
     std::map<G4int, G4int> NHits;
 
     for (size_t i = 0; i < hc->GetSize(); i++) {
 
-        B2TrackerHit* th = (B2TrackerHit*)hc->GetHit(i);
+        TrackerHit* th = (TrackerHit*)hc->GetHit(i);
+        th->Print();
         NHits[th->GetTrackID()]++;
     }
 
     // count how many daughters a trajectory had
     std::map<G4int, G4int> NDaughters;
+    std::map<G4int, G4int> NNeutralDaughters;
     std::map<G4int, std::set<G4int>> DaughtersPDG;
 
     for (G4int i = 0; i < n_trajectories; i++) {
 
         G4int parentID = (*trajectoryContainer)[i]->GetParentID();
         G4int pdg = (*trajectoryContainer)[i]->GetPDGEncoding();
+        G4int charge = (G4int)(*trajectoryContainer)[i]->GetCharge();
+
         NDaughters[parentID]++;
         DaughtersPDG[parentID].insert(pdg);
+        if (!charge) NNeutralDaughters[parentID]++;
     }
 
     // identify injected particles
@@ -103,6 +109,9 @@ void EventAction::EndOfEventAction(const G4Event* event) {
         G4double px = (*trajectoryContainer)[i]->GetInitialMomentum().x();
         G4double py = (*trajectoryContainer)[i]->GetInitialMomentum().y();
         G4double pz = (*trajectoryContainer)[i]->GetInitialMomentum().z();
+        G4double x = (*trajectoryContainer)[i]->GetPoint(0)->GetPosition().x();
+        G4double y = (*trajectoryContainer)[i]->GetPoint(0)->GetPosition().y();
+        G4double z = (*trajectoryContainer)[i]->GetPoint(0)->GetPosition().z();
         G4int pdg = (*trajectoryContainer)[i]->GetPDGEncoding();
 
         InitialMomentum[trackID] = sqrt(px * px + py * py + pz * pz);
@@ -115,45 +124,174 @@ void EventAction::EndOfEventAction(const G4Event* event) {
             if (pdg == -2112) injectedBkg_ID = trackID;
         }
 
-        G4cout << "    Trajectory = " << trackID << ", Parent = " << parentID << ", PDG = " << pdg << ", (Px,Py,Pz) = (" << px << ", " << py
-               << ", " << pz << "), NHits = " << NHits[trackID] << ", NDaughters = " << NDaughters[trackID] << G4endl;
+        G4cout << "    Trajectory = " << trackID << ", Parent = " << parentID << ", PDG = " << pdg  //
+               << ", (Px,Py,Pz) = (" << px << ", " << py << ", " << pz                              //
+               << ", (x,y,z) = (" << x << ", " << y << ", " << z                                    //
+               << "), NHits = " << NHits[trackID] << ", NDaughters = " << NDaughters[trackID] << G4endl;
     }
 
     // trigger condition
-    G4bool BkgInteract = NDaughters[injectedBkg_ID] > 0;
+    G4bool Bkg_V0LikeChannel = NDaughters[injectedBkg_ID] > 0;
+    // G4bool Bkg_V0LikeChannel = NDaughters[injectedBkg_ID] == 2 && NNeutralDaughters[injectedBkg_ID] == 2;
+    // G4bool Bkg_V0LikeChannel = NDaughters[injectedBkg_ID] == 3 && NNeutralDaughters[injectedBkg_ID] == 3;
     G4bool SignalA_NiceChannel = NDaughters[injectedSignalA_ID] == 2 &&            //
                                  DaughtersPDG[injectedSignalA_ID].count(-2212) &&  //
                                  DaughtersPDG[injectedSignalA_ID].count(211);
     G4bool SignalB_NiceChannel = NDaughters[injectedSignalB_ID] == 2 &&            //
                                  DaughtersPDG[injectedSignalB_ID].count(211) &&    //
                                  DaughtersPDG[injectedSignalB_ID].count(-211);
-    if (SignalA_NiceChannel && SignalB_NiceChannel && BkgInteract) {
+    if (SignalA_NiceChannel && SignalB_NiceChannel && Bkg_V0LikeChannel) {
+        StoreEvent(event);
         eventManager->KeepTheCurrentEvent();
     }
 
     for (size_t i = 0; i < hc->GetSize(); i++) {
 
-        B2TrackerHit* th = (B2TrackerHit*)hc->GetHit(i);
+        TrackerHit* th = (TrackerHit*)hc->GetHit(i);
 
         analysisManager->FillNtupleIColumn(0, 0, eventID);
         analysisManager->FillNtupleIColumn(0, 1, th->GetTrackID());
         analysisManager->FillNtupleIColumn(0, 2, th->GetChamberNb());
-        analysisManager->FillNtupleDColumn(0, 3, th->GetPos().x());
-        analysisManager->FillNtupleDColumn(0, 4, th->GetPos().y());
-        analysisManager->FillNtupleDColumn(
-            0, 5, th->GetPos().z() + 3000);  // m.kroesen's comment: shift because of geometry -- not aligned correctly
+        analysisManager->FillNtupleDColumn(0, 3, th->GetPosition().x());
+        analysisManager->FillNtupleDColumn(0, 4, th->GetPosition().y());
+        analysisManager->FillNtupleDColumn(0, 5, th->GetPosition().z());
         analysisManager->FillNtupleDColumn(0, 6, InitialMomentum[th->GetTrackID()]);
         analysisManager->FillNtupleDColumn(
             0, 7,
-            std::sqrt(th->GetMom().x() * th->GetMom().x() + th->GetMom().y() * th->GetMom().y() + th->GetMom().z() * th->GetMom().z()));
+            std::sqrt(th->GetMomentum().x() * th->GetMomentum().x() + th->GetMomentum().y() * th->GetMomentum().y() +
+                      th->GetMomentum().z() * th->GetMomentum().z()));
         analysisManager->FillNtupleDColumn(0, 8, PDGcode[th->GetTrackID()]);
-        analysisManager->FillNtupleDColumn(0, 9, th->GetMom().x());
-        analysisManager->FillNtupleDColumn(0, 10, th->GetMom().y());
-        analysisManager->FillNtupleDColumn(0, 11, th->GetMom().z());
+        analysisManager->FillNtupleDColumn(0, 9, th->GetMomentum().x());
+        analysisManager->FillNtupleDColumn(0, 10, th->GetMomentum().y());
+        analysisManager->FillNtupleDColumn(0, 11, th->GetMomentum().z());
         analysisManager->FillNtupleDColumn(0, 12, th->GetEdep());
 
         analysisManager->AddNtupleRow(0);
     }
+}
+
+void EventAction::StoreEvent(const G4Event* event) {
+    //
+    //
+    //
+
+    G4String fOutputFilename = "../output_e" + std::to_string(event->GetEventID()) + ".csv";  // default test value
+    if (output_file != "") fOutputFilename = output_file;
+
+    std::ofstream fOutputFile;
+    fOutputFile.open(fOutputFilename);
+
+    // get trajectories
+    G4TrajectoryContainer* trajectoryContainer = event->GetTrajectoryContainer();
+    G4int n_trajectories = 0;
+    if (trajectoryContainer) n_trajectories = trajectoryContainer->entries();
+
+    // map trajectories info to trackID
+    std::map<G4int, G4int> PdgCode;
+    std::map<G4int, G4ThreeVector> InitialMomentum;
+    std::map<G4int, G4ThreeVector> InitialPosition;
+    std::map<G4int, G4int> MotherID;
+    std::map<G4int, G4bool> IsPrimary;
+    std::map<G4int, G4bool> IsSignal;
+
+    for (G4int i = 0; i < n_trajectories; i++) {
+
+        G4int trackID = (*trajectoryContainer)[i]->GetTrackID();
+        PdgCode[trackID] = (*trajectoryContainer)[i]->GetPDGEncoding();
+        InitialMomentum[trackID] = (*trajectoryContainer)[i]->GetInitialMomentum();
+        InitialPosition[trackID] = (*trajectoryContainer)[i]->GetPoint(0)->GetPosition();
+        MotherID[trackID] = (*trajectoryContainer)[i]->GetParentID();
+        IsPrimary[trackID] = MotherID[trackID] == 0;
+        G4bool is_secondary = InitialPosition[trackID].x() != 0. &&                                              //
+                              InitialPosition[trackID].y() != 0. &&                                              //
+                              InitialPosition[trackID].z() != 0.;
+        G4bool is_signal = IsPrimary[trackID] &&                                                                 //
+                           (PdgCode[trackID] == 310 || PdgCode[trackID] == -3122) &&                             //
+                           is_secondary;
+        G4bool is_mother_secondary = InitialPosition[MotherID[trackID]].x() != 0. &&                             //
+                                     InitialPosition[MotherID[trackID]].y() != 0. &&                             //
+                                     InitialPosition[MotherID[trackID]].z() != 0.;
+        G4bool is_mother_signal = IsPrimary[MotherID[trackID]] &&                                                //
+                                  (PdgCode[MotherID[trackID]] == 310 || PdgCode[MotherID[trackID]] == -3122) &&  //
+                                  is_mother_secondary;
+        IsSignal[trackID] = is_signal || is_mother_signal;
+    }
+
+    // declare columns
+    G4int csv_eventID;
+    G4int csv_trackID;
+    G4int csv_chamberNb;
+    G4double csv_PDGcode;
+    G4double csv_x;
+    G4double csv_y;
+    G4double csv_z;
+    G4double csv_px;
+    G4double csv_py;
+    G4double csv_pz;
+    G4double csv_px_ini;
+    G4double csv_py_ini;
+    G4double csv_pz_ini;
+    G4double csv_Edep;
+    G4String csv_process;
+    G4bool csv_issignal;
+
+    G4int csv_motherID;
+    G4int csv_mother_PDGcode;
+    G4bool csv_mother_issignal;
+    G4double csv_mother_x;
+    G4double csv_mother_y;
+    G4double csv_mother_z;
+    G4double csv_mother_px;
+    G4double csv_mother_py;
+    G4double csv_mother_pz;
+
+    // loop over hits
+    G4VHitsCollection* hc = event->GetHCofThisEvent()->GetHC(0);
+    G4int n_hits = hc->GetSize();
+
+    for (G4int i = 0; i < n_hits; i++) {
+
+        TrackerHit* th = (TrackerHit*)hc->GetHit(i);
+
+        csv_eventID = event->GetEventID();
+        csv_trackID = th->GetTrackID();
+        csv_chamberNb = th->GetChamberNb();
+
+        csv_PDGcode = PdgCode[csv_trackID];
+        csv_x = th->GetPosition().x();
+        csv_y = th->GetPosition().y();
+        csv_z = th->GetPosition().z();
+        csv_px = th->GetMomentum().x();
+        csv_py = th->GetMomentum().y();
+        csv_pz = th->GetMomentum().z();
+        csv_px_ini = InitialMomentum[csv_trackID].x();
+        csv_py_ini = InitialMomentum[csv_trackID].y();
+        csv_pz_ini = InitialMomentum[csv_trackID].z();
+        csv_Edep = th->GetEdep();
+        csv_process = th->GetProcess();
+        csv_issignal = IsSignal[csv_trackID];
+
+        csv_motherID = MotherID[csv_trackID];
+        csv_mother_PDGcode = PdgCode[csv_motherID];
+        csv_mother_issignal = IsSignal[csv_motherID];
+        csv_mother_x = InitialPosition[csv_motherID].x();
+        csv_mother_y = InitialPosition[csv_motherID].y();
+        csv_mother_z = InitialPosition[csv_motherID].z();
+        csv_mother_px = InitialMomentum[csv_motherID].x();
+        csv_mother_py = InitialMomentum[csv_motherID].y();
+        csv_mother_pz = InitialMomentum[csv_motherID].z();
+
+        // (output)
+        fOutputFile << csv_eventID << "," << csv_trackID << "," << csv_chamberNb << ","                     //
+                    << csv_PDGcode << "," << csv_x << "," << csv_y << "," << csv_z << ","                   //
+                    << csv_px << "," << csv_py << "," << csv_pz << ","                                      //
+                    << csv_px_ini << "," << csv_py_ini << "," << csv_pz_ini << ","                          //
+                    << csv_Edep << "," << csv_process << "," << (int)csv_issignal << ","                    //
+                    << csv_motherID << "," << csv_mother_PDGcode << "," << (int)csv_mother_issignal << ","  //
+                    << csv_mother_x << "," << csv_mother_y << "," << csv_mother_z << ","                    //
+                    << csv_mother_px << "," << csv_mother_py << "," << csv_mother_pz << G4endl;
+    }
+    fOutputFile.close();
 }
 
 }  // namespace B2

@@ -36,6 +36,7 @@
 
 extern std::string signal_file;
 extern std::string bkg_file;
+extern std::string output_file;
 
 namespace B2a {
 
@@ -51,13 +52,18 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* det) : fDetectorConst
 
     fSignalFileCmd = new G4UIcmdWithAString("/FCT/signal_file", this);
     fSignalFileCmd->SetGuidance("Select signal input file");
-    fSignalFileCmd->SetParameterName("GUN", false);
+    fSignalFileCmd->SetParameterName("filename", false);
     fSignalFileCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
     fBkgFileCmd = new G4UIcmdWithAString("/FCT/bkg_file", this);
     fBkgFileCmd->SetGuidance("Select background input file");
-    fBkgFileCmd->SetParameterName("GUN", false);
+    fBkgFileCmd->SetParameterName("filename", false);
     fBkgFileCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fOutputFileCmd = new G4UIcmdWithAString("/FCT/output_file", this);
+    fOutputFileCmd->SetGuidance("Select output file");
+    fOutputFileCmd->SetParameterName("filename", false);
+    fOutputFileCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
     fTargMatCmd = new G4UIcmdWithAString("/B2/det/setTargetMaterial", this);
     fTargMatCmd->SetGuidance("Select Material of the Target.");
@@ -86,6 +92,7 @@ DetectorMessenger::~DetectorMessenger() {
     delete fFCT;
     delete fSignalFileCmd;
     delete fBkgFileCmd;
+    delete fOutputFileCmd;
 }
 
 void DetectorMessenger::SetNewValue(G4UIcommand* command, G4String newValue) {
@@ -95,6 +102,10 @@ void DetectorMessenger::SetNewValue(G4UIcommand* command, G4String newValue) {
 
     if (command == fBkgFileCmd) {
         bkg_file = newValue;
+    }
+
+    if (command == fOutputFileCmd) {
+        output_file = newValue;
     }
 
     if (command == fTargMatCmd) {

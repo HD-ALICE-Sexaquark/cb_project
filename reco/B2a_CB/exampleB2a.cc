@@ -41,8 +41,11 @@
 #include "G4UIExecutive.hh"
 #include "G4VisExecutive.hh"
 
+// global variables
+// (bad practice, but who cares at this point)
 std::string signal_file = "";
 std::string bkg_file = "";
+std::string output_file = "";
 
 int main(int argc, char** argv) {
     // Detect interactive mode (if no arguments) and define UI session
@@ -85,17 +88,21 @@ int main(int argc, char** argv) {
         // batch mode
         G4String signalFileName;
         G4String bkgFileName;
-        if (argc == 3) {
+        G4String outputFileName;
+        if (argc == 4) {
             signalFileName = argv[1];
             bkgFileName = argv[2];
+            outputFileName = argv[3];
         } if (argc == 2) {
             signalFileName = "event" + (G4String)argv[1] + "_sig.csv";
             bkgFileName = "event" + (G4String)argv[1] + "_bkg.csv";
+            outputFileName = "event" + (G4String)argv[1] + "_reco.csv";
         } else {
             return 1;
         }
         UImanager->ApplyCommand("/FCT/signal_file " + signalFileName);
         UImanager->ApplyCommand("/FCT/bkg_file " + bkgFileName);
+        UImanager->ApplyCommand("/FCT/output_file " + outputFileName);
         UImanager->ApplyCommand("/run/initialize");
         UImanager->ApplyCommand("/tracking/verbose 1");
         UImanager->ApplyCommand("/run/beamOn 1");

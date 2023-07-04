@@ -42,8 +42,12 @@ class EventAction : public G4UserEventAction {
     EventAction() = default;
     ~EventAction() override = default;
 
+   public:
     void BeginOfEventAction(const G4Event*) override;
     void EndOfEventAction(const G4Event*) override;
+
+   public:
+    void StoreEvent(const G4Event* event);
 };
 
 }  // namespace B2
