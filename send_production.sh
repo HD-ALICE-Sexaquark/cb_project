@@ -5,9 +5,14 @@
  ##    to generate Sexaquark-CB simulations
 # # # # # # # # # # # # # # # # # # # # # # #
 
-# global variables
-N_EVENTS_PER_RUN=10 # 1000
-N_CURRENT_PROCESSES=0
+  ##
+ ## Global Variables
+# # # # # # # # # # #
+
+SIM_DIR=$(readlink -f ${PWD}) # main directory (recommended: the current repo dir)
+OUTPUT_DIR=${SIM_DIR}/output  # output directory (recommended: a location with storage)
+N_EVENTS_PER_RUN=10           # number of events per run (recommended: 1000)
+N_CURRENT_PROCESSES=0         # counter of current processes (do not modify!)
 
   ##
  ## Functions
@@ -20,23 +25,24 @@ function print_help() {
     echo "  * ROOT"
     echo "  * GEANT4"
     echo "USAGE:"
-    echo "  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv> --bkg <bkg_opt> --nproc <nproc>"
-    echo "  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc>"
+    echo "  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir>"
+    echo "  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir>"
     echo "  where:"
-    echo "  <mode>    = it can be:"
-    echo "              * 0 : send job to the HTCondor farm" # PENDING
-    echo "              * 1 : run processes in the background"
-    echo "  <rn>      = specific run numbers, separated by comma"
-    echo "              for example:"
-    echo "              --rn 0,1,2"
-    echo "  <run1>    = run number of the first job (starting point of loop)"
-    echo "  <run2>    = run number of the last job (end of loop)"
-    echo "  <serv>    = (only valid when mode == 0) select which machine to use: alice-serv<serv>"
-    echo "              it can be: 10, 12, 13 or 14"
-    echo "              IMPORTANT: make sure to send a max of 8 jobs per serv"
-    echo "  <bkg_opt> = choose PDG code of injected background particle" # PENDING: could be extended for pp simulations
-    echo "  <nproc>   = (optional) number of processes to be running simultaneously"
-    echo "              default value: half of the available cores on the machine"
+    echo "  <mode>        = it can be:"
+    echo "                  * 0 : send job to the HTCondor farm" # PENDING
+    echo "                  * 1 : run processes in the background"
+    echo "  <rn>          = specific run numbers, separated by comma"
+    echo "                  for example:"
+    echo "                  --rn 0,1,2"
+    echo "  <run1>        = run number of the first job (starting point of loop)"
+    echo "  <run2>        = run number of the last job (end of loop)"
+    echo "  <serv>        = (only valid when mode == 0) select which machine to use: alice-serv<serv>"
+    echo "                  it can be: 10, 12, 13 or 14"
+    echo "                  IMPORTANT: make sure to send a max of 8 jobs per serv"
+    echo "  <bkg_opt>     = choose PDG code of injected background particle" # PENDING: could be extended for pp simulations
+    echo "  <nproc>       = (optional) number of processes to be running simultaneously"
+    echo "                  default value: half of the available cores on the machine"
+    echo "  <out_sub_dir> = subdirectory within the output directory, for organizational purposes"
     echo "EXAMPLES:"
     echo "  ./send_production.sh --mode 1 --rn 14 --bkg 111"
     # echo "  ./send_production.sh --mode 0 --run1 0 --run2 10 --serv 14 --bkg -2212" # PENDING
@@ -61,6 +67,8 @@ function process_args() {
             BKG_OPT=${arr[$((ic+1))]}
         elif [[ "${arr[$ic]}" == "--nproc" ]]; then
             N_PROCESSES=${arr[$((ic+1))]}
+        elif [[ "${arr[$ic]}" == "--outsd" ]]; then
+            OUTPUT_SUBDIR=${arr[$((ic+1))]}
         else
             echo "ERROR: unrecognized argument: ${arr[$((ic))]}."
             print_help
@@ -235,6 +243,11 @@ if [[ -z ${N_PROCESSES} ]]; then
     N_PROCESSES=$((`nproc` / 2))
 fi
 
+if [[ -n ${OUTPUT_SUBDIR} ]]; then
+    # if non-empty, add to output dir
+    OUTPUT_DIR="${OUTPUT_DIR}/${OUTPUT_SUBDIR}"
+fi
+
   ##
  ## Check for environment
 # # # # # # # # # # # # # #
@@ -253,11 +266,7 @@ fi
  ## Main
 # # # # #
 
-# define sim dir
-SIM_DIR=$(readlink -f ${PWD})
-
-# define output directory, if it doesn't exist, create it
-OUTPUT_DIR=${SIM_DIR}/output
+# if output directory doesn't exist, create it
 mkdir -p ${OUTPUT_DIR}
 
 # fill array of run numbers
@@ -314,7 +323,11 @@ for run in ${RUN_NUMBER_ARR[@]}; do
 
     if [[ ${INT_MODE} -eq 1 ]]; then
         inject_signal
-        inject_bkg
+        if [[ "${BKG_OPT}" == "pp"]]; then
+            generate_bkg
+        else
+            inject_bkg
+        fi
         do_reconstruction
     else
         echo "... WIP ..." # PENDING
