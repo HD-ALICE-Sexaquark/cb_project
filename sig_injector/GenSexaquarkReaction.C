@@ -9,7 +9,6 @@
 #include "TPDGCode.h"
 #include "TRandom.h"
 
-#define PDG_SEXAQUARK -900000020
 #define MASS_SEXAQUARK 1.8
 
 // allowed decay channels to the set of vectors

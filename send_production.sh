@@ -2,8 +2,12 @@
 
    ##
   ##  Master Script to send batch jobs
- ##    to generate Sexaquark-FCT simulations
+ ##    to generate Sexaquark-CB simulations
 # # # # # # # # # # # # # # # # # # # # # # #
+
+# global variables
+N_EVENTS_PER_RUN=10 # 1000
+N_CURRENT_PROCESSES=0
 
   ##
  ## Functions
@@ -14,24 +18,28 @@ function print_help() {
     echo "=========================="
     echo "REQUIREMENTS:"
     echo "  * ROOT"
+    echo "  * GEANT4"
     echo "USAGE:"
-    echo "  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv>"
-    echo "  ./send_production.sh --mode <mode> --rn <rn> --serv <serv>"
+    echo "  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv> --bkg <bkg_opt> --nproc <nproc>"
+    echo "  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc>"
     echo "  where:"
-    echo "  <mode> = it can be:"
-    echo "           * 0 : send job to the HTCondor farm"
-    echo "           * 1 : interactive execution in a tmux session"
-    echo "  <rn>   = specific run number, separated by comma"
-    echo "           for example:"
-    echo "           --rn 0,1,2"
-    echo "  <run1> = run number of the first job (starting point of loop)"
-    echo "  <run2> = run number of the last job (end of loop)"
-    echo "  <serv> = (only valid when mode == 0) select which machine to use: alice-serv<serv>"
-    echo "           it can be: 10, 12, 13 or 14"
-    echo "           IMPORTANT: make sure to send a max of 8 jobs per serv"
+    echo "  <mode>    = it can be:"
+    echo "              * 0 : send job to the HTCondor farm" # PENDING
+    echo "              * 1 : run processes in the background"
+    echo "  <rn>      = specific run numbers, separated by comma"
+    echo "              for example:"
+    echo "              --rn 0,1,2"
+    echo "  <run1>    = run number of the first job (starting point of loop)"
+    echo "  <run2>    = run number of the last job (end of loop)"
+    echo "  <serv>    = (only valid when mode == 0) select which machine to use: alice-serv<serv>"
+    echo "              it can be: 10, 12, 13 or 14"
+    echo "              IMPORTANT: make sure to send a max of 8 jobs per serv"
+    echo "  <bkg_opt> = choose PDG code of injected background particle" # PENDING: could be extended for pp simulations
+    echo "  <nproc>   = (optional) number of processes to be running simultaneously"
+    echo "              default value: half of the available cores on the machine"
     echo "EXAMPLES:"
-    echo "  ./send_production.sh --mode 0 --run1 0 --run2 10 --serv 14"
-    echo "  ./send_production.sh --mode 1 --rn 297595,297590"
+    echo "  ./send_production.sh --mode 1 --rn 14 --bkg 111"
+    # echo "  ./send_production.sh --mode 0 --run1 0 --run2 10 --serv 14 --bkg -2212" # PENDING
 }
 
 function process_args() {
@@ -49,6 +57,10 @@ function process_args() {
             RUN2=${arr[$((ic+1))]}
         elif [[ "${arr[$ic]}" == "--serv" ]]; then
             SERV=${arr[$((ic+1))]}
+        elif [[ "${arr[$ic]}" == "--bkg" ]]; then
+            BKG_OPT=${arr[$((ic+1))]}
+        elif [[ "${arr[$ic]}" == "--nproc" ]]; then
+            N_PROCESSES=${arr[$((ic+1))]}
         else
             echo "ERROR: unrecognized argument: ${arr[$((ic))]}."
             print_help
@@ -72,30 +84,68 @@ function get_num_3dig() {
 }
 
   ##
+ ## Signal
+# # # # # #
+
+function inject_signal() {
+    # generate the products of an anti-sexaquark-nucleon interaction
+
+    for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do
+        # set filenames
+        str_event="$(get_num_3dig ${event})"
+        SIGNAL_CSV=event${str_event}_sig.csv
+        SIGNAL_LOG=event${str_event}_sig.log
+
+        # run in the background
+        root -l -b -q 'GenSexaquarkReaction.C("'${SIGNAL_CSV}'")' &> ${SIGNAL_LOG} &
+        echo "send_production.sh :: sending signal ${str_event}"
+
+        N_CURRENT_PROCESSES=$(jobs | wc -l)
+        # echo "send_production.sh :: N_CURRENT_PROCESSES = ${N_CURRENT_PROCESSES}"
+        while [[ ${N_CURRENT_PROCESSES} -ge ${N_PROCESSES} ]]; do
+            wait -n
+            N_CURRENT_PROCESSES=$(jobs | wc -l)
+            # echo "send_production.sh :: N_CURRENT_PROCESSES = ${N_CURRENT_PROCESSES}"
+        done
+    done
+}
+
+  ##
  ## Background
 # # # # # # # #
 
+function inject_bkg() {
+    # generate a single bkg particle per event, for all events in a run
+
+    for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do
+        # set filenames
+        str_event="$(get_num_3dig ${event})"
+        BKG_CSV=event${str_event}_bkg.csv
+        BKG_LOG=event${str_event}_bkg.log
+
+        # run in the background
+        root -l -b -q 'GenBox.C('${BKG_OPT}', "'${BKG_CSV}'")' &> ${BKG_LOG} &
+        echo "send_production.sh :: sending bkg ${str_event}"
+
+        N_CURRENT_PROCESSES=$(jobs | wc -l)
+        # echo "send_production.sh :: N_CURRENT_PROCESSES = ${N_CURRENT_PROCESSES}"
+        while [[ ${N_CURRENT_PROCESSES} -ge ${N_PROCESSES} ]]; do
+            wait -n
+            N_CURRENT_PROCESSES=$(jobs | wc -l)
+            # echo "send_production.sh :: N_CURRENT_PROCESSES = ${N_CURRENT_PROCESSES}"
+        done
+    done
+}
+
 function generate_bkg() {
+    # generate pp collisions
+    # PENDING: to check if still works
     BKG_CFG=config_pp.cmnd
     BKG_LOG=${str_run}_bkg.log
     # modify number of events in config file
     sed -i "s|Main:numberOfEvents = 1|Main:numberOfEvents = ${N_EVENTS_PER_RUN}|g" ${BKG_CFG}
     # the loop and setting of filenames are done internally
     ./main_fct ${BKG_CFG} &> ${BKG_LOG} &
-}
-
-  ##
- ## Signal
-# # # # # #
-
-function generate_signal() {
-    # generate one run of signal interactions
-    for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do
-        str_event="$(get_num_3dig ${event})"
-        SIGNAL_CSV=event${str_event}_sig.csv
-        SIGNAL_LOG=${str_run}_sig.log
-        root -l -b -q 'GenSexaquarkReaction.C("'${SIGNAL_CSV}'")' &>> ${SIGNAL_LOG} &
-    done
 }
 
   ##
@@ -114,15 +164,37 @@ function do_reconstruction() {
         # wait 1 second until next iteration
         sleep 1
     done
-    echo "send_production.sh :: all files done, now we can proceed with the reconstruction"
+    echo "send_production.sh :: all files done, merging log files"
+
+    # merge all log files into one
+    # - for signal
+    RUN_SIGNAL_LOG=${str_run}_sig.log
+    cat event*_sig.log > ${RUN_SIGNAL_LOG}
+    rm event*_sig.log
+    # - for bkg
+    RUN_BKG_LOG=${str_run}_bkg.log
+    cat event*_bkg.log > ${RUN_BKG_LOG}
+    rm event*_bkg.log
+    echo "send_production.sh :: now we can proceed with the reconstruction"
+
     # start reconstruction process
     for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do
+        # set filenames
+        # - input
         str_event="$(get_num_3dig ${event})"
         SIGNAL_CSV=event${str_event}_sig.csv
         BKG_CSV=event${str_event}_bkg.csv
-        RECO_LOG=${str_run}_reco.log
-        ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} &> ${RECO_LOG} & # PENDING
+        # - output and log
+        RECO_CSV=event${str_event}_reco.csv
+        RECO_LOG=event${str_event}_reco.log
+
+        # run sequentially, geant4 takes care of the parallelization
+        echo "send_production.sh :: running reco ${str_event}"
+        ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} $((N_PROCESSES)) &> ${RECO_LOG}
     done
+
+    # clean other csv files (PENDING: to fix when I get rid of AnalysisManager)
+    rm B2_nt*.csv
 }
 
   ##
@@ -153,12 +225,27 @@ if [[ -n ${RUN1} || -n ${RUN2} ]] && [[ -n ${RUN_NUMBER_LIST} ]]; then # -n : no
     exit 1
 fi
 
+if [[ -z ${BKG_OPT} ]]; then
+    # set default value
+    BKG_OPT=-2112
+fi
+
+if [[ -z ${N_PROCESSES} ]]; then
+    # set default value
+    N_PROCESSES=$((`nproc` / 2))
+fi
+
   ##
  ## Check for environment
 # # # # # # # # # # # # # #
 
+if [[ ! $(geant4-config) ]]; then
+    echo "ERROR: make sure to set GEANT4"
+    exit 1
+fi
+
 if [[ -z ${ROOTSYS} ]]; then
-    echo "ERROR: you need to have ROOT installed or loaded"
+    echo "ERROR: make sure to set ROOT"
     exit 1
 fi
 
@@ -173,9 +260,6 @@ SIM_DIR=$(readlink -f ${PWD})
 OUTPUT_DIR=${SIM_DIR}/output
 mkdir -p ${OUTPUT_DIR}
 
-# global variable
-N_EVENTS_PER_RUN=100 # 1000
-
 # fill array of run numbers
 if [[ ${#RUN_NUMBER_ARR[@]} -eq 0 ]] && [[ -n ${RUN1} || -n ${RUN2} ]]; then
     RUN_NUMBER_ARR=()
@@ -183,6 +267,29 @@ if [[ ${#RUN_NUMBER_ARR[@]} -eq 0 ]] && [[ -n ${RUN1} || -n ${RUN2} ]]; then
         RUN_NUMBER_ARR+=(${run})
     done
 fi
+
+# print info
+echo "send_production.sh :: initiating..."
+echo "send_production.sh ::"
+echo "send_production.sh :: Parameters:"
+echo "send_production.sh :: >> SIM_DIR          = ${SIM_DIR}"
+echo "send_production.sh :: >> OUTPUT_DIR       = ${OUTPUT_DIR}"
+echo "send_production.sh :: >> N_EVENTS_PER_RUN = ${N_EVENTS_PER_RUN}"
+echo "send_production.sh"
+echo "send_production.sh :: Chosen options:"
+echo "send_production.sh :: >> bkg_opt  = ${BKG_OPT}"
+echo -n "send_production.sh :: >> runs     = "
+for run in ${RUN_NUMBER_ARR[@]}; do
+    echo -n "$(get_num_3dig ${run}) "
+done
+echo ""
+echo "send_production.sh :: >> mode     = ${INT_MODE}"
+if [[ ${INT_MODE} -eq 1 ]]; then
+    echo "send_production.sh :: >> nproc    = ${N_PROCESSES}"
+else
+    echo "send_production.sh :: >> serv     = ${SERV}"
+fi
+echo "send_production.sh"
 
 # start loop
 for run in ${RUN_NUMBER_ARR[@]}; do
@@ -197,26 +304,20 @@ for run in ${RUN_NUMBER_ARR[@]}; do
     # enter run dir
     cd ${RUN_DIR}
 
-    # prepare necessary files:
-    # - of background generator
-    cp ${SIM_DIR}/bkg_gen/config_pp.cmnd config_pp.cmnd
-    if [[ -e ${SIM_DIR}/bkg_gen/main_fct ]] ; then
-        cp ${SIM_DIR}/bkg_gen/main_fct main_fct
-    else
-        echo "ERROR: make sure to compile the bkg generator first"
-        exit 1
-    fi
-    # - of signal generator
-    cp ${SIM_DIR}/sig_gen/GenSexaquarkReaction.C GenSexaquarkReaction.C
+    # bring necessary files:
+    # - of background injector
+    cp ${SIM_DIR}/bkg_injector/GenBox.C GenBox.C
+    # - of signal injector
+    cp ${SIM_DIR}/sig_injector/GenSexaquarkReaction.C GenSexaquarkReaction.C
     # - of reconstruction
-    cp ${SIM_DIR}/reco/B2a_MK_build/exampleB2a exampleB2a
+    cp ${SIM_DIR}/reco/B2a_CB_build/exampleB2a exampleB2a
 
     if [[ ${INT_MODE} -eq 1 ]]; then
-        generate_signal
-        generate_bkg
-        # do_reconstruction "${OUTDIR}"
+        inject_signal
+        inject_bkg
+        do_reconstruction
     else
-        echo "... WIP ..."
+        echo "... WIP ..." # PENDING
     fi
 
     # go back to sim dir

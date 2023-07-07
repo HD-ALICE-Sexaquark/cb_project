@@ -31,7 +31,9 @@
 #include "DetectorConstruction.hh"
 
 #include "FTFP_BERT.hh"
+#include "G4Run.hh"
 #include "G4RunManagerFactory.hh"
+#include "G4StateManager.hh"
 #include "G4StepLimiterPhysics.hh"
 #include "G4SteppingVerbose.hh"
 #include "G4UImanager.hh"
@@ -83,29 +85,54 @@ int main(int argc, char** argv) {
     // Get the pointer to the User Interface manager
     G4UImanager* UImanager = G4UImanager::GetUIpointer();
 
+    // useful objects
+    // G4RunManager* master_runManager;
+    const G4Run* run = nullptr;
+    const std::vector<const G4Event*>* events = nullptr;
+    G4int nKeptEvents;
+
     // Process macro or start UI session
     if (!ui) {
         // batch mode
         G4String signalFileName;
         G4String bkgFileName;
         G4String outputFileName;
-        if (argc == 4) {
+        G4String nProcesses;
+        if (argc == 5) {
             signalFileName = argv[1];
             bkgFileName = argv[2];
             outputFileName = argv[3];
-        } if (argc == 2) {
+            nProcesses = argv[4];
+        } else if (argc == 2) {
             signalFileName = "event" + (G4String)argv[1] + "_sig.csv";
             bkgFileName = "event" + (G4String)argv[1] + "_bkg.csv";
             outputFileName = "event" + (G4String)argv[1] + "_reco.csv";
         } else {
             return 1;
         }
+        // (debug)
+        G4cout << "signalFileName = " << signalFileName << G4endl;
+        G4cout << "bkgFileName = " << bkgFileName << G4endl;
+        G4cout << "outputFileName = " << outputFileName << G4endl;
+        G4cout << "nProcesses = " << nProcesses << G4endl;
         UImanager->ApplyCommand("/FCT/signal_file " + signalFileName);
         UImanager->ApplyCommand("/FCT/bkg_file " + bkgFileName);
         UImanager->ApplyCommand("/FCT/output_file " + outputFileName);
-        UImanager->ApplyCommand("/run/initialize");
-        UImanager->ApplyCommand("/tracking/verbose 1");
-        UImanager->ApplyCommand("/run/beamOn 1");
+        UImanager->ApplyCommand("/run/numberOfThreads " + nProcesses);
+        UImanager->ApplyCommand("/run/initialize");  // G4RunManager::Initialize().
+        UImanager->ApplyCommand("/tracking/verbose 0");
+        UImanager->ApplyCommand("/tracking/storeTrajectory 2"); // IMPORTANT!!
+        // G4cout << "CURRENT STATE = " << G4StateManager::GetStateManager()->GetCurrentState() << G4endl;
+        while (true) {
+            UImanager->ApplyCommand("/run/beamOn " + nProcesses);
+            // master_runManager = G4RunManagerFactory::GetMasterRunManager();
+            run = runManager ? runManager->GetCurrentRun() : nullptr;
+            events = run ? run->GetEventVector() : nullptr;
+            nKeptEvents = events ? (G4int)events->size() : 0;
+            if (nKeptEvents) {
+                break;
+            }
+        }
     } else {
         // interactive mode
         UImanager->ApplyCommand("/control/execute init_vis.mac");

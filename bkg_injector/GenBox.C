@@ -10,7 +10,7 @@
 #include "TRandom.h"
 
 //_____________________________________________________________________________
-void GenBox(Int_t fPDGCode = -2112, TString fOutputFilename = "../../reco/bkg.csv") {
+void GenBox(Int_t fPDGCode = -2112, TString fOutputFilename = "../reco/bkg.csv") {
     //
     // Generate a single particle
     //
@@ -49,6 +49,8 @@ void GenBox(Int_t fPDGCode = -2112, TString fOutputFilename = "../../reco/bkg.cs
     }
 
     // (debug)
+    printf(">> Particle:\n");
+    printf("   PDG Code = %i\n\n", fPDGCode);
     printf(">> Kinematics:\n");
     printf("   %.2f < Pt < %.2f GeV/c\n", fPtMin, fPtMax);
     printf("   %.2f < Theta < %.2f degrees <=> %.2f < Theta < %.2f rad\n",  //

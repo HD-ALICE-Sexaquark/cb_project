@@ -59,6 +59,7 @@ void EventAction::EndOfEventAction(const G4Event* event) {
 
     // periodic printing
     G4int eventID = event->GetEventID();
+    /*
     if (eventID < 100 || eventID % 100 == 0) {
         G4cout << ">>> Event: " << eventID << G4endl;
         if (trajectoryContainer) {
@@ -66,6 +67,7 @@ void EventAction::EndOfEventAction(const G4Event* event) {
         }
         G4cout << "    " << n_hits << " hits stored" << G4endl;
     }
+    */
 
     // count how many hits a trajectory had
     std::map<G4int, G4int> NHits;
@@ -73,7 +75,7 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     for (size_t i = 0; i < hc->GetSize(); i++) {
 
         TrackerHit* th = (TrackerHit*)hc->GetHit(i);
-        th->Print();
+        // th->Print();
         NHits[th->GetTrackID()]++;
     }
 
@@ -124,10 +126,12 @@ void EventAction::EndOfEventAction(const G4Event* event) {
             if (pdg == -2112) injectedBkg_ID = trackID;
         }
 
+        /*
         G4cout << "    Trajectory = " << trackID << ", Parent = " << parentID << ", PDG = " << pdg  //
                << ", (Px,Py,Pz) = (" << px << ", " << py << ", " << pz                              //
                << ", (x,y,z) = (" << x << ", " << y << ", " << z                                    //
                << "), NHits = " << NHits[trackID] << ", NDaughters = " << NDaughters[trackID] << G4endl;
+        */
     }
 
     // trigger condition
