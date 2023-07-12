@@ -198,7 +198,7 @@ function do_reconstruction() {
 
         # run sequentially, geant4 takes care of the parallelization
         echo "send_production.sh :: running reco ${str_event}"
-        ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} $((N_PROCESSES)) &> ${RECO_LOG}
+        ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} ${BKG_OPT} $((N_PROCESSES)) &> ${RECO_LOG}
     done
 
     # clean other csv files (PENDING: to fix when I get rid of AnalysisManager)
@@ -323,7 +323,7 @@ for run in ${RUN_NUMBER_ARR[@]}; do
 
     if [[ ${INT_MODE} -eq 1 ]]; then
         inject_signal
-        if [[ "${BKG_OPT}" == "pp"]]; then
+        if [[ "${BKG_OPT}" == "pp" ]]; then
             generate_bkg
         else
             inject_bkg

@@ -35,6 +35,7 @@
 
 class G4UIdirectory;
 class G4UIcmdWithAString;
+class G4UIcmdWithAnInteger;
 class G4UIcmdWithADoubleAndUnit;
 
 namespace B2a {
@@ -68,6 +69,7 @@ class DetectorMessenger : public G4UImessenger {
     G4UIcmdWithAString* fSignalFileCmd = nullptr;
     G4UIcmdWithAString* fBkgFileCmd = nullptr;
     G4UIcmdWithAString* fOutputFileCmd = nullptr;
+    G4UIcmdWithAnInteger* fBkgPdgCodeCmd = nullptr;
 
     G4UIcmdWithADoubleAndUnit* fStepMaxCmd = nullptr;
 };

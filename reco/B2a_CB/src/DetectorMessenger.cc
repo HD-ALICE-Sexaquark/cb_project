@@ -32,11 +32,13 @@
 
 #include "G4UIcmdWithADoubleAndUnit.hh"
 #include "G4UIcmdWithAString.hh"
+#include "G4UIcmdWithAnInteger.hh"
 #include "G4UIdirectory.hh"
 
 extern std::string signal_file;
 extern std::string bkg_file;
 extern std::string output_file;
+extern int bkg_pdg_code;
 
 namespace B2a {
 
@@ -64,6 +66,11 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* det) : fDetectorConst
     fOutputFileCmd->SetGuidance("Select output file");
     fOutputFileCmd->SetParameterName("filename", false);
     fOutputFileCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fBkgPdgCodeCmd = new G4UIcmdWithAnInteger("/FCT/bkg_pdg_code", this);
+    fBkgPdgCodeCmd->SetGuidance("Select PDG code of background particle");
+    fBkgPdgCodeCmd->SetParameterName("pdg_code", false);
+    fBkgPdgCodeCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
     fTargMatCmd = new G4UIcmdWithAString("/B2/det/setTargetMaterial", this);
     fTargMatCmd->SetGuidance("Select Material of the Target.");
@@ -106,6 +113,10 @@ void DetectorMessenger::SetNewValue(G4UIcommand* command, G4String newValue) {
 
     if (command == fOutputFileCmd) {
         output_file = newValue;
+    }
+
+    if (command == fBkgPdgCodeCmd) {
+        bkg_pdg_code = G4UIcmdWithAnInteger::GetNewIntValue(newValue);
     }
 
     if (command == fTargMatCmd) {

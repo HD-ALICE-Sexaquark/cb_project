@@ -23,6 +23,14 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
     1,PDGCode,Px,Py,Pz
     ```
 
+* **Output:**
+
+  * Reconstruction file (`.csv`) with the following format:
+
+    ```
+    eventID,trackID,chamberNb,PDGcode,x,y,z,px,py,pz,px_ini,py_ini,pz_ini,Edep,process,issignal,motherID,mother_PDGcode,mother_issignal,mother_x,mother_y,mother_z,mother_px,mother_py,mother_pz
+    ```
+
 * **Interactive usage via Graphical User Interface:**
 
   First, make sure you already have both of your input files (check **Available commands** below). Then, inside the `reco/` dir:
@@ -52,6 +60,7 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
     * `/FCT/signal_file <filename>` : set input signal file (default value: `reco/signal.csv`)
     * `/FCT/bkg_file <filename>` : set input background file  (default value: `reco/bkg.csv`)
     * `/FCT/output_file <filename>` : set output file  (default value: `reco/output_e<event_id>.csv`)
+    * `/FCT/bkg_pdg_code <pdg_code>` : PDG code of the injected background particle (default value: `-2112`)
 
 ` `
 * **Batch usage:**
@@ -61,10 +70,10 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
   3. Enter `B2a_CB_build/`
   4. Execute with:
      ```
-     ./exampleB2a <signal_file> <bkg_file> <output_file> <n_threads>
+     ./exampleB2a <signal_file> <bkg_file> <output_file> <bkg_pdg_code> <n_threads>
      ```
-     Here, the first three arguments are self-explanatory, while `<n_threads>` corresponds to the number of parallel processes to run (recommended value: half of the machine's cores).
-  5. Program will finish when a relevant event has been reconstructed and an `<output_file>` with its content will be created.
+     Here, the first three arguments are self-explanatory, while `<bkg_pdg_code>` corresponds to the PDG code of the background particle, and `<n_threads>` to the number of parallel processes to run (recommended value: half of the machine's cores).
+  5. Program will finish when a relevant event has been reconstructed and an `<output_file>` with its content will be created (check **Output** above).
 
 ## **bkg_injector** / **sig_injector**
 

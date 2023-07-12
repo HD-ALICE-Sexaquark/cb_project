@@ -39,12 +39,17 @@
 #include "G4ios.hh"
 
 extern std::string output_file;
+extern int bkg_pdg_code;
 
 namespace B2 {
 
 void EventAction::BeginOfEventAction(const G4Event*) {}
 
 void EventAction::EndOfEventAction(const G4Event* event) {
+
+    G4int fBkgPdgCode = -2112;  // default value: an anti-neutron
+    if (bkg_pdg_code) fBkgPdgCode = bkg_pdg_code;
+
     // get important objects
     auto eventManager = G4EventManager::GetEventManager();
     auto analysisManager = G4AnalysisManager::Instance();
@@ -81,18 +86,37 @@ void EventAction::EndOfEventAction(const G4Event* event) {
 
     // count how many daughters a trajectory had
     std::map<G4int, G4int> NDaughters;
+    std::map<G4int, G4int> FirstDaughterID;
+    std::map<G4int, G4int> LastDaughterID;
     std::map<G4int, G4int> NNeutralDaughters;
+    std::map<G4int, G4int> NChargedDaughters;
     std::map<G4int, std::set<G4int>> DaughtersPDG;
 
     for (G4int i = 0; i < n_trajectories; i++) {
 
+        G4int trackID = (*trajectoryContainer)[i]->GetTrackID();
         G4int parentID = (*trajectoryContainer)[i]->GetParentID();
         G4int pdg = (*trajectoryContainer)[i]->GetPDGEncoding();
         G4int charge = (G4int)(*trajectoryContainer)[i]->GetCharge();
 
         NDaughters[parentID]++;
+
+        if (!FirstDaughterID[parentID]) {
+            // if not filled, assign current track as the first daughter
+            FirstDaughterID[parentID] = trackID;
+        } else {
+            // when filled,
+            LastDaughterID[parentID] = trackID;
+            // consequence: when NDaughters == 1, ignore LastDaughterID and get ID with FirstDaughterID
+        }
+
+        if (!charge) {
+            NNeutralDaughters[parentID]++;
+        } else {
+            NChargedDaughters[parentID]++;
+        }
+
         DaughtersPDG[parentID].insert(pdg);
-        if (!charge) NNeutralDaughters[parentID]++;
     }
 
     // identify injected particles
@@ -123,7 +147,7 @@ void EventAction::EndOfEventAction(const G4Event* event) {
         if (!parentID) {
             if (pdg == -3122) injectedSignalA_ID = trackID;
             if (pdg == 310) injectedSignalB_ID = trackID;
-            if (pdg == -2112) injectedBkg_ID = trackID;
+            if (pdg == fBkgPdgCode) injectedBkg_ID = trackID;
         }
 
         /*
@@ -135,9 +159,38 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     }
 
     // trigger condition
-    G4bool Bkg_V0LikeChannel = NDaughters[injectedBkg_ID] > 0;
-    // G4bool Bkg_V0LikeChannel = NDaughters[injectedBkg_ID] == 2 && NNeutralDaughters[injectedBkg_ID] == 2;
-    // G4bool Bkg_V0LikeChannel = NDaughters[injectedBkg_ID] == 3 && NNeutralDaughters[injectedBkg_ID] == 3;
+
+    // (the mentioned probabilities also consider the signal particles decaying into their nice channels)
+    G4bool Bkg_V0LikeChannel_AntiNeutron = NDaughters[injectedBkg_ID] > 0;  // (interaction ~ 2%)
+    G4bool Bkg_V0LikeChannel_Neutron;                                       // (interaction)
+    G4bool Bkg_V0LikeChannel_AntiProton;                                    // (interaction)
+    G4bool Bkg_V0LikeChannel_Proton;                                        // (interaction)
+    G4bool Bkg_V0LikeChannel_Gamma;                                         // (conversion, used for testing purposes ~ 10%)
+    G4bool Bkg_V0LikeChannel_Pi0;                                           // (discarded! decay + conversion chance less than 1%)
+    G4bool Bkg_V0LikeChannel_Eta;                                           // (discarded! decay + conversion chance less than 1%)
+    G4bool Bkg_V0LikeChannel_K0Short;                                       // (interaction)
+    G4bool Bkg_V0LikeChannel_K0Long;                                        // (interaction)
+    G4bool Bkg_V0LikeChannel_Lambda;                                        // (interaction)
+    G4bool Bkg_V0LikeChannel_AntiLambda;                                    // (interaction)
+    G4bool Bkg_V0LikeChannel_EtaPrime;                                      // (decay + conversion ~ 3%)
+    G4bool Bkg_V0LikeChannel_Phi;  // (yet to see, for this one, the interaction prob. of the K0Long should be >= 10%)
+
+    // choose which one will be applied based on the input bkg code
+    G4bool Bkg_V0LikeChannel = true;  // default, no requirement is needed for the bkg
+    if (fBkgPdgCode == -2112) Bkg_V0LikeChannel = Bkg_V0LikeChannel_AntiNeutron;
+    if (fBkgPdgCode == 2112) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Neutron;
+    if (fBkgPdgCode == -2212) Bkg_V0LikeChannel = Bkg_V0LikeChannel_AntiProton;
+    if (fBkgPdgCode == 2212) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Proton;
+    if (fBkgPdgCode == 22) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Gamma;
+    if (fBkgPdgCode == 111) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Pi0;
+    if (fBkgPdgCode == 221) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Eta;
+    if (fBkgPdgCode == 310) Bkg_V0LikeChannel = Bkg_V0LikeChannel_K0Short;
+    if (fBkgPdgCode == 130) Bkg_V0LikeChannel = Bkg_V0LikeChannel_K0Long;
+    if (fBkgPdgCode == 3122) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Lambda;
+    if (fBkgPdgCode == -3122) Bkg_V0LikeChannel = Bkg_V0LikeChannel_AntiLambda;
+    if (fBkgPdgCode == 331) Bkg_V0LikeChannel = Bkg_V0LikeChannel_EtaPrime;
+    if (fBkgPdgCode == 333) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Phi;
+
     G4bool SignalA_NiceChannel = NDaughters[injectedSignalA_ID] == 2 &&            //
                                  DaughtersPDG[injectedSignalA_ID].count(-2212) &&  //
                                  DaughtersPDG[injectedSignalA_ID].count(211);
@@ -286,13 +339,13 @@ void EventAction::StoreEvent(const G4Event* event) {
         csv_mother_pz = InitialMomentum[csv_motherID].z();
 
         // (output)
-        fOutputFile << csv_eventID << "," << csv_trackID << "," << csv_chamberNb << ","                     //
-                    << csv_PDGcode << "," << csv_x << "," << csv_y << "," << csv_z << ","                   //
-                    << csv_px << "," << csv_py << "," << csv_pz << ","                                      //
-                    << csv_px_ini << "," << csv_py_ini << "," << csv_pz_ini << ","                          //
-                    << csv_Edep << "," << csv_process << "," << (int)csv_issignal << ","                    //
-                    << csv_motherID << "," << csv_mother_PDGcode << "," << (int)csv_mother_issignal << ","  //
-                    << csv_mother_x << "," << csv_mother_y << "," << csv_mother_z << ","                    //
+        fOutputFile << csv_eventID << "," << csv_trackID << "," << csv_chamberNb << ","                               //
+                    << (G4long)csv_PDGcode << "," << csv_x << "," << csv_y << "," << csv_z << ","                     //
+                    << csv_px << "," << csv_py << "," << csv_pz << ","                                                //
+                    << csv_px_ini << "," << csv_py_ini << "," << csv_pz_ini << ","                                    //
+                    << csv_Edep << "," << csv_process << "," << (G4int)csv_issignal << ","                            //
+                    << csv_motherID << "," << (G4long)csv_mother_PDGcode << "," << (G4int)csv_mother_issignal << ","  //
+                    << csv_mother_x << "," << csv_mother_y << "," << csv_mother_z << ","                              //
                     << csv_mother_px << "," << csv_mother_py << "," << csv_mother_pz << G4endl;
     }
     fOutputFile.close();
