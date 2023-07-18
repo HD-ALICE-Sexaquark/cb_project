@@ -38,6 +38,7 @@
 #include "G4TrajectoryContainer.hh"
 #include "G4ios.hh"
 
+extern std::string signal_file;
 extern std::string output_file;
 extern int bkg_pdg_code;
 
@@ -191,12 +192,17 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     if (fBkgPdgCode == 331) Bkg_V0LikeChannel = Bkg_V0LikeChannel_EtaPrime;
     if (fBkgPdgCode == 333) Bkg_V0LikeChannel = Bkg_V0LikeChannel_Phi;
 
-    G4bool SignalA_NiceChannel = NDaughters[injectedSignalA_ID] == 2 &&            //
-                                 DaughtersPDG[injectedSignalA_ID].count(-2212) &&  //
-                                 DaughtersPDG[injectedSignalA_ID].count(211);
-    G4bool SignalB_NiceChannel = NDaughters[injectedSignalB_ID] == 2 &&            //
-                                 DaughtersPDG[injectedSignalB_ID].count(211) &&    //
-                                 DaughtersPDG[injectedSignalB_ID].count(-211);
+    G4bool OnlyBkg = signal_file == "0";
+    G4bool SignalA_NiceChannel = true;
+    G4bool SignalB_NiceChannel = true;
+    if (!OnlyBkg) {
+        SignalA_NiceChannel = NDaughters[injectedSignalA_ID] == 2 &&            //
+                              DaughtersPDG[injectedSignalA_ID].count(-2212) &&  //
+                              DaughtersPDG[injectedSignalA_ID].count(211);
+        SignalB_NiceChannel = NDaughters[injectedSignalB_ID] == 2 &&            //
+                              DaughtersPDG[injectedSignalB_ID].count(211) &&    //
+                              DaughtersPDG[injectedSignalB_ID].count(-211);
+    }
     if (SignalA_NiceChannel && SignalB_NiceChannel && Bkg_V0LikeChannel) {
         StoreEvent(event);
         eventManager->KeepTheCurrentEvent();

@@ -109,10 +109,16 @@ int main(int argc, char** argv) {
         } else {
             G4cerr << "exampleB2a.cc :: ERROR: for batch mode, you need exactly 5 arguments, like this:" << G4endl;
             G4cerr << "exampleB2a.cc ::        ./exampleB2a <signal_file> <bkg_file> <output_file> <bkg_pdg_code> <n_threads>" << G4endl;
+            G4cerr << "exampleB2a.cc ::        (for only bkg simulations, set signal_file to \"0\")" << G4endl;
             return 1;
         }
         // (debug)
-        G4cout << "exampleB2a.cc :: signalFileName = " << signalFileName << G4endl;
+        if (signalFileName == "0") {
+            G4cout << "exampleB2a.cc :: mode = only-bkg" << G4endl;
+        } else {
+            G4cout << "exampleB2a.cc :: mode = signal+bkg" << G4endl;
+            G4cout << "exampleB2a.cc :: signalFileName = " << signalFileName << G4endl;
+        }
         G4cout << "exampleB2a.cc :: bkgFileName    = " << bkgFileName << G4endl;
         G4cout << "exampleB2a.cc :: outputFileName = " << outputFileName << G4endl;
         G4cout << "exampleB2a.cc :: bkgPdgCode     = " << bkgPdgCode << G4endl;
@@ -137,7 +143,7 @@ int main(int argc, char** argv) {
             }
         }
     } else {
-        // interactive mode
+        // graphical mode
         UImanager->ApplyCommand("/control/execute init_vis.mac");
         if (ui->IsGUI()) {
             UImanager->ApplyCommand("/control/execute gui.mac");

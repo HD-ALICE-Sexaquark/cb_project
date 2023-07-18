@@ -69,13 +69,17 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
 
     std::ifstream bkgFile(input_bkg_file);
     if (!bkgFile.is_open()) {
-        std::cout << "Error opening file" << std::endl;
+        G4cerr << "ERROR: input file " << input_bkg_file << " not found." << G4endl;
         return;
     }
 
     std::string line;
 
     while (std::getline(bkgFile, line)) {
+
+        // protection
+        if (line == "") continue;
+
         std::istringstream iss(line);
         std::string token;
 
@@ -130,14 +134,19 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
 
     G4String input_signal_file = "../signal.csv";  // default test value
     if (signal_file != "") input_signal_file = signal_file;
+    if (input_signal_file == "0") return;          // in case of only-bkg simulations
 
     std::ifstream sigFile(input_signal_file);
     if (!sigFile.is_open()) {
-        std::cout << "Error opening file" << std::endl;
+        G4cerr << "ERROR: input file " << input_signal_file << " not found." << G4endl;
         return;
     }
 
     while (std::getline(sigFile, line)) {
+
+        // protection
+        if (line == "") continue;
+
         std::istringstream iss(line);
         std::string token;
 

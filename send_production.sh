@@ -25,8 +25,8 @@ function print_help() {
     echo "  * ROOT"
     echo "  * GEANT4"
     echo "USAGE:"
-    echo "  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir>"
-    echo "  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir>"
+    echo "  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir> --only-bkg <only-bkg>"
+    echo "  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir> --only-bkg <only-bkg>"
     echo "  where:"
     echo "  <mode>        = it can be:"
     echo "                  * 0 : send job to the HTCondor farm" # PENDING
@@ -43,6 +43,9 @@ function print_help() {
     echo "  <nproc>       = (optional) number of processes to be running simultaneously"
     echo "                  default value: half of the available cores on the machine"
     echo "  <out_sub_dir> = subdirectory within the output directory, for organizational purposes"
+    echo "  <only-bkg>    = it can be:"
+    echo "                  * 0 : signal+bkg simulations (default)"
+    echo "                  * 1 : only bkg simulations"
     echo "EXAMPLES:"
     echo "  ./send_production.sh --mode 1 --rn 14 --bkg 111"
     # echo "  ./send_production.sh --mode 0 --run1 0 --run2 10 --serv 14 --bkg -2212" # PENDING
@@ -69,6 +72,8 @@ function process_args() {
             N_PROCESSES=${arr[$((ic+1))]}
         elif [[ "${arr[$ic]}" == "--outsd" ]]; then
             OUTPUT_SUBDIR=${arr[$((ic+1))]}
+        elif [[ "${arr[$ic]}" == "--only-bkg" ]]; then
+            ONLY_BKG=${arr[$((ic+1))]}
         else
             echo "ERROR: unrecognized argument: ${arr[$((ic))]}."
             print_help
@@ -161,12 +166,19 @@ function generate_bkg() {
 # # # # # # # # # #
 
 function do_reconstruction() {
+
+    N_NEEDED_BKG_FILES=${N_EVENTS_PER_RUN}
+    N_NEEDED_SIG_FILES=0
+    if [[ ${ONLY_BKG} -eq 0 ]]; then
+        N_NEEDED_SIG_FILES=${N_EVENTS_PER_RUN}
+    fi
+
     # wait until all files are ready
     while true; do
         # count signal and bkg files
         N_SIG_FILES=$(ls -1 event*_sig.csv 2> /dev/null | wc -l)
         N_BKG_FILES=$(ls -1 event*_bkg.csv 2> /dev/null | wc -l)
-        if [[ ${N_SIG_FILES} -eq ${N_EVENTS_PER_RUN} ]] && [[ ${N_BKG_FILES} -eq ${N_EVENTS_PER_RUN} ]]; then
+        if [[ ${N_SIG_FILES} -eq ${N_NEEDED_SIG_FILES} ]] && [[ ${N_BKG_FILES} -eq ${N_NEEDED_BKG_FILES} ]]; then
             break
         fi
         # wait 1 second until next iteration
@@ -176,9 +188,11 @@ function do_reconstruction() {
 
     # merge all log files into one
     # - for signal
-    RUN_SIGNAL_LOG=${str_run}_sig.log
-    cat event*_sig.log > ${RUN_SIGNAL_LOG}
-    rm event*_sig.log
+    if [[ ${ONLY_BKG} -eq 0 ]]; then
+        RUN_SIGNAL_LOG=${str_run}_sig.log
+        cat event*_sig.log > ${RUN_SIGNAL_LOG}
+        rm event*_sig.log
+    fi
     # - for bkg
     RUN_BKG_LOG=${str_run}_bkg.log
     cat event*_bkg.log > ${RUN_BKG_LOG}
@@ -190,7 +204,11 @@ function do_reconstruction() {
         # set filenames
         # - input
         str_event="$(get_num_3dig ${event})"
-        SIGNAL_CSV=event${str_event}_sig.csv
+        if [[ ${ONLY_BKG} -eq 0 ]]; then
+            SIGNAL_CSV=event${str_event}_sig.csv
+        else
+            SIGNAL_CSV=0
+        fi
         BKG_CSV=event${str_event}_bkg.csv
         # - output and log
         RECO_CSV=event${str_event}_reco.csv
@@ -248,6 +266,11 @@ if [[ -n ${OUTPUT_SUBDIR} ]]; then
     OUTPUT_DIR="${OUTPUT_DIR}/${OUTPUT_SUBDIR}"
 fi
 
+if [[ -z ${ONLY_BKG} ]]; then
+    # set default value
+    ONLY_BKG=0
+fi
+
   ##
  ## Check for environment
 # # # # # # # # # # # # # #
@@ -286,6 +309,7 @@ echo "send_production.sh :: >> OUTPUT_DIR       = ${OUTPUT_DIR}"
 echo "send_production.sh :: >> N_EVENTS_PER_RUN = ${N_EVENTS_PER_RUN}"
 echo "send_production.sh"
 echo "send_production.sh :: Chosen options:"
+echo "send_production.sh :: >> only_bkg = ${ONLY_BKG}"
 echo "send_production.sh :: >> bkg_opt  = ${BKG_OPT}"
 echo -n "send_production.sh :: >> runs     = "
 for run in ${RUN_NUMBER_ARR[@]}; do
@@ -317,12 +341,16 @@ for run in ${RUN_NUMBER_ARR[@]}; do
     # - of background injector
     cp ${SIM_DIR}/bkg_injector/GenBox.C GenBox.C
     # - of signal injector
-    cp ${SIM_DIR}/sig_injector/GenSexaquarkReaction.C GenSexaquarkReaction.C
+    if [[ ${ONLY_BKG} -eq 0 ]]; then
+        cp ${SIM_DIR}/sig_injector/GenSexaquarkReaction.C GenSexaquarkReaction.C
+    fi
     # - of reconstruction
     cp ${SIM_DIR}/reco/B2a_CB_build/exampleB2a exampleB2a
 
     if [[ ${INT_MODE} -eq 1 ]]; then
-        inject_signal
+        if [[ ${ONLY_BKG} -eq 0 ]]; then
+            inject_signal
+        fi
         if [[ "${BKG_OPT}" == "pp" ]]; then
             generate_bkg
         else
@@ -332,6 +360,9 @@ for run in ${RUN_NUMBER_ARR[@]}; do
     else
         echo "... WIP ..." # PENDING
     fi
+
+    echo "send_production.sh ::"
+    echo "send_production.sh :: all done."
 
     # go back to sim dir
     cd ${SIM_DIR}
