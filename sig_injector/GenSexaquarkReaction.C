@@ -118,7 +118,7 @@ void GenSexaquarkReaction(TString fOutputFilename = "../reco/signal.csv") {
         */
 
         // set secondary vertex
-        Int_t Layer_S = gRandom->Integer(NLayers);                                                          // layer
+        Int_t Layer_S = gRandom->Integer(NLayers - 2);  // layer -- only use the first 9 layers, on purpose
         Float_t Vz_S = fZMin[Layer_S] + fRandom[3] * (fZMax[Layer_S] - fZMin[Layer_S]);                     // z (in cm)
         Float_t Radius_S = fRadiusMin[Layer_S] + fRandom[4] * (fRadiusMax[Layer_S] - fRadiusMin[Layer_S]);  // 2D Radius (in cm)
         Float_t Radius3D_S = TMath::Sqrt(Radius_S * Radius_S + Vz_S * Vz_S);                                // 3D Radius (in cm)
