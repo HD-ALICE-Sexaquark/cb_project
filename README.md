@@ -28,7 +28,7 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
   * Reconstruction file (`.csv`) with the following format:
 
     ```
-    eventID,trackID,chamberNb,PDGcode,x,y,z,px,py,pz,px_ini,py_ini,pz_ini,Edep,process,issignal,motherID,mother_PDGcode,mother_issignal,mother_x,mother_y,mother_z,mother_px,mother_py,mother_pz
+    eventID,trackID,chamberNb,PDGcode,x,y,z,px,py,pz,x_ini,y_ini,z_ini,px_ini,py_ini,pz_ini,Edep,process,issignal,motherID,mother_PDGcode,mother_issignal,mother_x,mother_y,mother_z,mother_px,mother_py,mother_pz
     ```
 
 * **Interactive usage via Graphical User Interface:**

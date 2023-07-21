@@ -261,8 +261,8 @@ void EventAction::StoreEvent(const G4Event* event) {
 
         G4int trackID = (*trajectoryContainer)[i]->GetTrackID();
         PdgCode[trackID] = (*trajectoryContainer)[i]->GetPDGEncoding();
-        InitialMomentum[trackID] = (*trajectoryContainer)[i]->GetInitialMomentum();
         InitialPosition[trackID] = (*trajectoryContainer)[i]->GetPoint(0)->GetPosition();
+        InitialMomentum[trackID] = (*trajectoryContainer)[i]->GetInitialMomentum();
         MotherID[trackID] = (*trajectoryContainer)[i]->GetParentID();
         IsPrimary[trackID] = MotherID[trackID] == 0;
         G4bool is_secondary = InitialPosition[trackID].x() != 0. &&                                              //
@@ -291,6 +291,9 @@ void EventAction::StoreEvent(const G4Event* event) {
     G4double csv_px;
     G4double csv_py;
     G4double csv_pz;
+    G4double csv_x_ini;
+    G4double csv_y_ini;
+    G4double csv_z_ini;
     G4double csv_px_ini;
     G4double csv_py_ini;
     G4double csv_pz_ini;
@@ -327,6 +330,9 @@ void EventAction::StoreEvent(const G4Event* event) {
         csv_px = th->GetMomentum().x();
         csv_py = th->GetMomentum().y();
         csv_pz = th->GetMomentum().z();
+        csv_x_ini = InitialPosition[csv_trackID].x();
+        csv_y_ini = InitialPosition[csv_trackID].y();
+        csv_z_ini = InitialPosition[csv_trackID].z();
         csv_px_ini = InitialMomentum[csv_trackID].x();
         csv_py_ini = InitialMomentum[csv_trackID].y();
         csv_pz_ini = InitialMomentum[csv_trackID].z();
@@ -348,6 +354,7 @@ void EventAction::StoreEvent(const G4Event* event) {
         fOutputFile << csv_eventID << "," << csv_trackID << "," << csv_chamberNb << ","                               //
                     << (G4long)csv_PDGcode << "," << csv_x << "," << csv_y << "," << csv_z << ","                     //
                     << csv_px << "," << csv_py << "," << csv_pz << ","                                                //
+                    << csv_x_ini << "," << csv_y_ini << "," << csv_z_ini << ","                                       //
                     << csv_px_ini << "," << csv_py_ini << "," << csv_pz_ini << ","                                    //
                     << csv_Edep << "," << csv_process << "," << (G4int)csv_issignal << ","                            //
                     << csv_motherID << "," << (G4long)csv_mother_PDGcode << "," << (G4int)csv_mother_issignal << ","  //
