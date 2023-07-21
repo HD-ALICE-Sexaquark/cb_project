@@ -112,11 +112,6 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
 
     for (int i = 0; i < (int)bkgStatus.size(); i++) {
 
-        // (cut)
-        if (std::abs(bkgPz[i] * GeV) < 0.01 * GeV) {
-            continue;
-        }
-
         fBackgroundGun->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle(bkgPdgCode[i]));
         fBackgroundGun->SetParticleMomentum(G4ThreeVector(bkgPx[i] * GeV, bkgPy[i] * GeV, bkgPz[i] * GeV));
         fBackgroundGun->SetParticlePosition(G4ThreeVector(0., 0., 0.));
@@ -184,6 +179,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event *anEvent) {
     fSignalGun = new G4ParticleGun(1);
 
     for (int i = 0; i < (int)sigStatus.size(); i++) {
+
         fSignalGun->SetParticleDefinition(G4ParticleTable::GetParticleTable()->FindParticle(sigPdgCode[i]));
         fSignalGun->SetParticleMomentum(G4ThreeVector(sigPx[i] * GeV, sigPy[i] * GeV, sigPz[i] * GeV));
         fSignalGun->SetParticlePosition(G4ThreeVector(sigVx[i] * cm, sigVy[i] * cm, sigVz[i] * cm));

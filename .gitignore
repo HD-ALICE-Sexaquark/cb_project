@@ -9,3 +9,4 @@ bkg_gen/main_fct
 **.log
 Makefile**
 output/
+**/test/
