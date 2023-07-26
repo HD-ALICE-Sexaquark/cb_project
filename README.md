@@ -28,7 +28,21 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
   * Reconstruction file (`.csv`) with the following format:
 
     ```
-    eventID,trackID,chamberNb,PDGcode,x,y,z,px,py,pz,x_ini,y_ini,z_ini,px_ini,py_ini,pz_ini,Edep,process,issignal,motherID,mother_PDGcode,mother_issignal,mother_x,mother_y,mother_z,mother_px,mother_py,mother_pz
+    eventID,trackID,layerNb,PDGcode,x_hit,y_hit,z_hit,px_hit,py_hit,pz_hit,x_ini,y_ini,z_ini,px_ini,py_ini,pz_ini,Edep,process,issignal,motherID,mother_PDGcode,mother_issignal,mother_x_ini,mother_y_ini,mother_z_ini,mother_px_ini,mother_py_ini,mother_pz_ini
+    ```
+    where:
+    ```
+    eventID        = event number
+    trackID        = track number
+    layerNb        = layer in which the hit happened (from 0 to 10)
+    PDGcode        = PDG code of the track
+    (x,y,z)_hit    = spatial coordinates of the hit
+    (px,py,pz)_hit = momentum of the track at the hit position
+    (x,y,z)_ini    = initial position or origin of the track
+    (px,py,pz)_ini = initial momentum at origin of the track
+    Edep           = energy deposited by the hit
+    process        = creation process of the track
+    issignal       = is 1 if track comes from an antisexaquark-nucleon reaction
     ```
 
 * **Interactive usage via Graphical User Interface:**
@@ -40,7 +54,6 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
   3. In case you want to set different input/output files than the default ones, set the files as in **Available commands**
   4. Press the `/run/beamOn 1` button to generate a single event, propagating both signal and background particles
 
-  ` `
   * **Testing trigger condition:**
 
     Not all the events are relevant, because: (1) the signal V0s could decay in neutral channels that are more difficult to reconstruct, and (2) when you require a background particle to interact with the detector material, this will not always happen.
@@ -57,12 +70,11 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
 
   * **Available commands**:
 
-    * `/FCT/signal_file <filename>` : set input signal file (default value: `reco/signal.csv`)
+    * `/FCT/signal_file <filename>` : set input signal file (default value: `reco/signal.csv`). To read only the background file, set `/FCT/signal_file 0`
     * `/FCT/bkg_file <filename>` : set input background file  (default value: `reco/bkg.csv`)
     * `/FCT/output_file <filename>` : set output file  (default value: `reco/output_e<event_id>.csv`)
     * `/FCT/bkg_pdg_code <pdg_code>` : PDG code of the injected background particle (default value: `-2112`)
 
-` `
 * **Batch usage:**
 
   1. Enter `reco/`
@@ -83,11 +95,11 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
 
   `root -l -b -q 'sig_injector/GenSexaquarkReaction.C("<output_file>")'`
 
-  `root -l -b -q 'bkg_injector/GenBox.C(<pdg>, "<output_file>")'`
+  `root -l -b -q 'bkg_injector/GenBox.C(<pdg_code>, "<output_file>")'`
 
   where:
   * `<output_file>` : path of output file
-  * `<pdg>` : PDG code of the particle to inject as background
+  * `<pdg_code>` : PDG code of the particle to inject as background
 
 ## **bkg_gen**
 
@@ -100,8 +112,8 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
 * **Usage:**
 
   ```
-  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir>
-  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir>
+  ./send_production.sh --mode <mode> --run1 <run1> --run2 <run2> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir> --only-bkg <only-bkg>
+  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir> --only-bkg <only-bkg>
   ```
 
   where:
@@ -119,6 +131,8 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
   <nproc>       = (optional) number of processes to be running simultaneously
                   default value: half of the available cores on the machine
   <out_sub_dir> = subdirectory within the output directory, for organizational purposes
+  <only-bkg>    = it can be: 0 : signal+bkg simulations (default)
+                             1 : only bkg simulations
   ```
 
 * **Hard-coded Parameters:**
