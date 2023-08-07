@@ -1,5 +1,5 @@
-#ifndef B2Analysis_h
-#define B2Analysis_h 1
+#ifndef B2aAnalysis_hh
+#define B2aAnalysis_hh 1
 
 #include "G4CsvAnalysisManager.hh"
 

@@ -24,15 +24,15 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/src/ActionInitialization.cc
-/// \brief Implementation of the B2::ActionInitialization class
+/// \file B2a_CB/src/ActionInitialization.cc
+/// \brief Implementation of the B2a::ActionInitialization class
 
 #include "ActionInitialization.hh"
 #include "EventAction.hh"
 #include "PrimaryGeneratorAction.hh"
 #include "RunAction.hh"
 
-namespace B2 {
+namespace B2a {
 
 void ActionInitialization::BuildForMaster() const { SetUserAction(new RunAction); }
 

@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     runManager->SetUserInitialization(physicsList);
 
     // Set user action classes
-    runManager->SetUserInitialization(new B2::ActionInitialization());
+    runManager->SetUserInitialization(new B2a::ActionInitialization());
 
     // Initialize visualization
     G4VisManager* visManager = new G4VisExecutive;

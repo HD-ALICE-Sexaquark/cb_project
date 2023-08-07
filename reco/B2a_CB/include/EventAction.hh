@@ -24,17 +24,17 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/EventAction.hh
-/// \brief Definition of the B2::EventAction class
+/// \file B2a_CB/include/EventAction.hh
+/// \brief Definition of the B2a::EventAction class
 
-#ifndef B2EventAction_h
-#define B2EventAction_h 1
+#ifndef B2aEventAction_hh
+#define B2aEventAction_hh 1
 
 #include "G4UserEventAction.hh"
 
 #include "globals.hh"
 
-namespace B2 {
+namespace B2a {
 
 // Event action class
 class EventAction : public G4UserEventAction {

@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/src/DetectorConstruction.cc
+/// \file B2a_CB/src/DetectorConstruction.cc
 /// \brief Implementation of the B2a::DetectorConstruction class
 
 #include "DetectorConstruction.hh"
@@ -51,8 +51,6 @@
 #include "G4VisAttributes.hh"
 
 #include "G4SystemOfUnits.hh"
-
-using namespace B2;
 
 namespace B2a {
 

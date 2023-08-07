@@ -24,8 +24,8 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/src/TrackerHit.cc
-/// \brief Implementation of the B2::TrackerHit class
+/// \file B2a_CB/src/TrackerHit.cc
+/// \brief Implementation of the B2a::TrackerHit class
 
 #include "TrackerHit.hh"
 
@@ -37,7 +37,7 @@
 
 #include <iomanip>
 
-namespace B2 {
+namespace B2a {
 
 G4ThreadLocal G4Allocator<TrackerHit>* TrackerHitAllocator = nullptr;
 

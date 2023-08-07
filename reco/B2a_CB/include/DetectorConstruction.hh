@@ -24,11 +24,11 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/DetectorConstruction.hh
+/// \file B2a_CB/include/DetectorConstruction.hh
 /// \brief Definition of the B2a::DetectorConstruction class
 
-#ifndef B2aDetectorConstruction_h
-#define B2aDetectorConstruction_h 1
+#ifndef B2aDetectorConstruction_hh
+#define B2aDetectorConstruction_hh 1
 
 #include "G4VUserDetectorConstruction.hh"
 #include "globals.hh"

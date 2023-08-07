@@ -24,8 +24,8 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/src/RunAction.cc
-/// \brief Implementation of the B2::RunAction class
+/// \file B2a_CB/src/RunAction.cc
+/// \brief Implementation of the B2a::RunAction class
 
 #include "RunAction.hh"
 
@@ -33,7 +33,7 @@
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 
-namespace B2 {
+namespace B2a {
 
 RunAction::RunAction() {
     // set printing event number per each 100 events

@@ -24,11 +24,11 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/TrackerHit.hh
-/// \brief Definition of the B2::TrackerHit class
+/// \file B2a_CB/include/TrackerHit.hh
+/// \brief Definition of the B2a::TrackerHit class
 
-#ifndef B2TrackerHit_h
-#define B2TrackerHit_h 1
+#ifndef B2aTrackerHit_hh
+#define B2aTrackerHit_hh 1
 
 #include "G4Allocator.hh"
 #include "G4THitsCollection.hh"
@@ -36,7 +36,7 @@
 #include "G4VHit.hh"
 #include "tls.hh"
 
-namespace B2 {
+namespace B2a {
 
 /// Tracker hit class
 ///

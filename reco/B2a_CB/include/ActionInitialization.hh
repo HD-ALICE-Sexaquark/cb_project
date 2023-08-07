@@ -24,15 +24,15 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/ActionInitialization.hh
-/// \brief Definition of the B2::ActionInitialization class
+/// \file B2a_CB/include/ActionInitialization.hh
+/// \brief Definition of the B2a::ActionInitialization class
 
-#ifndef B2ActionInitialization_h
-#define B2ActionInitialization_h 1
+#ifndef B2aActionInitialization_hh
+#define B2aActionInitialization_hh 1
 
 #include "G4VUserActionInitialization.hh"
 
-namespace B2 {
+namespace B2a {
 
 /// Action initialization class
 

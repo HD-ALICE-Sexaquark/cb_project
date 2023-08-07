@@ -24,8 +24,8 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/src/EventAction.cc
-/// \brief Implementation of the B2::EventAction class
+/// \file B2a_CB/src/EventAction.cc
+/// \brief Implementation of the B2a::EventAction class
 
 #include "EventAction.hh"
 
@@ -42,7 +42,7 @@ extern std::string signal_file;
 extern std::string output_file;
 extern int bkg_pdg_code;
 
-namespace B2 {
+namespace B2a {
 
 void EventAction::BeginOfEventAction(const G4Event*) {}
 
@@ -358,10 +358,10 @@ void EventAction::StoreEvent(const G4Event* event) {
                     << csv_px_ini << "," << csv_py_ini << "," << csv_pz_ini << ","                                    //
                     << csv_Edep << "," << csv_process << "," << (G4int)csv_issignal << ","                            //
                     << csv_motherID << "," << (G4long)csv_mother_PDGcode << "," << (G4int)csv_mother_issignal << ","  //
-                    << csv_mother_x << "," << csv_mother_y << "," << csv_mother_z << ","                              //
-                    << csv_mother_px << "," << csv_mother_py << "," << csv_mother_pz << G4endl;
+                    << csv_mother_x / cm << "," << csv_mother_y / cm << "," << csv_mother_z / cm << ","               //
+                    << csv_mother_px / GeV << "," << csv_mother_py / GeV << "," << csv_mother_pz / GeV << G4endl;
     }
     fOutputFile.close();
 }
 
-}  // namespace B2
+}  // namespace B2a

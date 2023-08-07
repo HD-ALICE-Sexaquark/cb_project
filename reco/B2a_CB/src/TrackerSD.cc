@@ -24,9 +24,9 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/src/TrackerSD.cc
-/// \brief Implementation of the B2::TrackerSD class
-// SD is for Sensitive Detector
+/// \file B2a_CB/src/TrackerSD.cc
+/// \brief Implementation of the B2a::TrackerSD class
+//         (SD is for Sensitive Detector)
 
 #include "TrackerSD.hh"
 
@@ -37,7 +37,7 @@
 #include "G4VProcess.hh"
 #include "G4ios.hh"
 
-namespace B2 {
+namespace B2a {
 
 TrackerSD::TrackerSD(const G4String& name, const G4String& hitsCollectionName)
     : G4VSensitiveDetector(name),  //

@@ -24,11 +24,11 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/DetectorMessenger.hh
+/// \file B2a_CB/include/DetectorMessenger.hh
 /// \brief Definition of the B2a::DetectorMessenger class
 
-#ifndef B2aDetectorMessenger_h
-#define B2aDetectorMessenger_h 1
+#ifndef B2aDetectorMessenger_hh
+#define B2aDetectorMessenger_hh 1
 
 #include "G4UImessenger.hh"
 #include "globals.hh"
