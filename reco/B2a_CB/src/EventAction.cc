@@ -29,7 +29,6 @@
 
 #include "EventAction.hh"
 
-#include "B2Analysis.hh"
 #include "TrackerHit.hh"
 
 #include "G4Event.hh"
@@ -54,7 +53,6 @@ void EventAction::EndOfEventAction(const G4Event* event) {
 
     // get important objects
     auto eventManager = G4EventManager::GetEventManager();
-    auto analysisManager = G4AnalysisManager::Instance();
 
     // get number of stored trajectories
     G4TrajectoryContainer* trajectoryContainer = event->GetTrajectoryContainer();
@@ -210,30 +208,6 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     if (SignalA_NiceChannel && SignalB_NiceChannel && Bkg_V0LikeChannel) {
         StoreEvent(event);
         eventManager->KeepTheCurrentEvent();
-    }
-
-    for (size_t i = 0; i < hc->GetSize(); i++) {
-
-        TrackerHit* th = (TrackerHit*)hc->GetHit(i);
-
-        analysisManager->FillNtupleIColumn(0, 0, eventID);
-        analysisManager->FillNtupleIColumn(0, 1, th->GetTrackID());
-        analysisManager->FillNtupleIColumn(0, 2, th->GetChamberNb());
-        analysisManager->FillNtupleDColumn(0, 3, th->GetPosition().x());
-        analysisManager->FillNtupleDColumn(0, 4, th->GetPosition().y());
-        analysisManager->FillNtupleDColumn(0, 5, th->GetPosition().z());
-        analysisManager->FillNtupleDColumn(0, 6, InitialMomentum[th->GetTrackID()]);
-        analysisManager->FillNtupleDColumn(
-            0, 7,
-            std::sqrt(th->GetMomentum().x() * th->GetMomentum().x() + th->GetMomentum().y() * th->GetMomentum().y() +
-                      th->GetMomentum().z() * th->GetMomentum().z()));
-        analysisManager->FillNtupleDColumn(0, 8, PDGcode[th->GetTrackID()]);
-        analysisManager->FillNtupleDColumn(0, 9, th->GetMomentum().x());
-        analysisManager->FillNtupleDColumn(0, 10, th->GetMomentum().y());
-        analysisManager->FillNtupleDColumn(0, 11, th->GetMomentum().z());
-        analysisManager->FillNtupleDColumn(0, 12, th->GetEdep());
-
-        analysisManager->AddNtupleRow(0);
     }
 }
 
