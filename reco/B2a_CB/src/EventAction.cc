@@ -34,6 +34,7 @@
 
 #include "G4Event.hh"
 #include "G4EventManager.hh"
+#include "G4SystemOfUnits.hh"
 #include "G4Trajectory.hh"
 #include "G4TrajectoryContainer.hh"
 #include "G4ios.hh"
@@ -75,13 +76,15 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     }
     */
 
-    // count how many hits a trajectory had
-    std::map<G4int, G4int> NHits;
+    // declare maps, key = track ID
+    std::map<G4int, G4int> NHits;       // number of hits of a track
+    std::map<G4int, G4String> Process;  // creation process
 
     for (size_t i = 0; i < hc->GetSize(); i++) {
 
         TrackerHit* th = (TrackerHit*)hc->GetHit(i);
         // th->Print();
+        Process[th->GetTrackID()] = th->GetProcess();
         NHits[th->GetTrackID()]++;
     }
 
@@ -162,18 +165,21 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     // trigger condition
 
     // (the mentioned probabilities also consider the signal particles decaying into their nice channels)
-    G4bool Bkg_V0LikeChannel_AntiNeutron = NDaughters[injectedBkg_ID] > 0;  // (interaction ~ 2%)
-    G4bool Bkg_V0LikeChannel_Neutron;                                       // (interaction)
-    G4bool Bkg_V0LikeChannel_AntiProton;                                    // (interaction)
-    G4bool Bkg_V0LikeChannel_Proton;                                        // (interaction)
-    G4bool Bkg_V0LikeChannel_Gamma;                                         // (conversion, used for testing purposes ~ 10%)
-    G4bool Bkg_V0LikeChannel_Pi0;                                           // (discarded! decay + conversion chance less than 1%)
-    G4bool Bkg_V0LikeChannel_Eta;                                           // (discarded! decay + conversion chance less than 1%)
-    G4bool Bkg_V0LikeChannel_K0Short;                                       // (interaction)
-    G4bool Bkg_V0LikeChannel_K0Long;                                        // (interaction)
-    G4bool Bkg_V0LikeChannel_Lambda;                                        // (interaction)
-    G4bool Bkg_V0LikeChannel_AntiLambda;                                    // (interaction)
-    G4bool Bkg_V0LikeChannel_EtaPrime;                                      // (decay + conversion ~ 3%)
+    G4bool Bkg_V0LikeChannel_AntiNeutron = NDaughters[injectedBkg_ID] > 0 &&                                       //
+                                           Process[FirstDaughterID[injectedBkg_ID]] == "anti_neutronInelastic" &&  //
+                                           DaughtersPDG[injectedBkg_ID].count(310) &&
+                                           DaughtersPDG[injectedBkg_ID].count(-3122);  // (interaction ~ 2%)
+    G4bool Bkg_V0LikeChannel_Neutron;                                                  // (interaction)
+    G4bool Bkg_V0LikeChannel_AntiProton;                                               // (interaction)
+    G4bool Bkg_V0LikeChannel_Proton;                                                   // (interaction)
+    G4bool Bkg_V0LikeChannel_Gamma;                                                    // (conversion, used for testing purposes ~ 10%)
+    G4bool Bkg_V0LikeChannel_Pi0;                                      // (discarded! decay + conversion chance less than 1%)
+    G4bool Bkg_V0LikeChannel_Eta;                                      // (discarded! decay + conversion chance less than 1%)
+    G4bool Bkg_V0LikeChannel_K0Short;                                  // (interaction)
+    G4bool Bkg_V0LikeChannel_K0Long = NDaughters[injectedBkg_ID] > 0;  // (interaction, 2%)
+    G4bool Bkg_V0LikeChannel_Lambda;                                   // (interaction)
+    G4bool Bkg_V0LikeChannel_AntiLambda;                               // (interaction)
+    G4bool Bkg_V0LikeChannel_EtaPrime;                                 // (decay + conversion ~ 3%)
     G4bool Bkg_V0LikeChannel_Phi;  // (yet to see, for this one, the interaction prob. of the K0Long should be >= 10%)
 
     // choose which one will be applied based on the input bkg code
@@ -196,12 +202,10 @@ void EventAction::EndOfEventAction(const G4Event* event) {
     G4bool SignalA_NiceChannel = true;
     G4bool SignalB_NiceChannel = true;
     if (!OnlyBkg) {
-        SignalA_NiceChannel = NDaughters[injectedSignalA_ID] == 2 &&            //
-                              DaughtersPDG[injectedSignalA_ID].count(-2212) &&  //
-                              DaughtersPDG[injectedSignalA_ID].count(211);
-        SignalB_NiceChannel = NDaughters[injectedSignalB_ID] == 2 &&            //
-                              DaughtersPDG[injectedSignalB_ID].count(211) &&    //
-                              DaughtersPDG[injectedSignalB_ID].count(-211);
+        SignalA_NiceChannel = NDaughters[injectedSignalA_ID] == 2 &&  //
+                              DaughtersPDG[injectedSignalA_ID].count(-2212) && DaughtersPDG[injectedSignalA_ID].count(211);
+        SignalB_NiceChannel = NDaughters[injectedSignalB_ID] == 2 &&  //
+                              DaughtersPDG[injectedSignalB_ID].count(211) && DaughtersPDG[injectedSignalB_ID].count(-211);
     }
     if (SignalA_NiceChannel && SignalB_NiceChannel && Bkg_V0LikeChannel) {
         StoreEvent(event);
@@ -265,14 +269,14 @@ void EventAction::StoreEvent(const G4Event* event) {
         InitialMomentum[trackID] = (*trajectoryContainer)[i]->GetInitialMomentum();
         MotherID[trackID] = (*trajectoryContainer)[i]->GetParentID();
         IsPrimary[trackID] = MotherID[trackID] == 0;
-        G4bool is_secondary = InitialPosition[trackID].x() != 0. &&                                              //
-                              InitialPosition[trackID].y() != 0. &&                                              //
+        G4bool is_secondary = InitialPosition[trackID].x() != 0. &&  //
+                              InitialPosition[trackID].y() != 0. &&  //
                               InitialPosition[trackID].z() != 0.;
-        G4bool is_signal = IsPrimary[trackID] &&                                                                 //
-                           (PdgCode[trackID] == 310 || PdgCode[trackID] == -3122) &&                             //
+        G4bool is_signal = IsPrimary[trackID] &&                                      //
+                           (PdgCode[trackID] == 310 || PdgCode[trackID] == -3122) &&  //
                            is_secondary;
-        G4bool is_mother_secondary = InitialPosition[MotherID[trackID]].x() != 0. &&                             //
-                                     InitialPosition[MotherID[trackID]].y() != 0. &&                             //
+        G4bool is_mother_secondary = InitialPosition[MotherID[trackID]].x() != 0. &&  //
+                                     InitialPosition[MotherID[trackID]].y() != 0. &&  //
                                      InitialPosition[MotherID[trackID]].z() != 0.;
         G4bool is_mother_signal = IsPrimary[MotherID[trackID]] &&                                                //
                                   (PdgCode[MotherID[trackID]] == 310 || PdgCode[MotherID[trackID]] == -3122) &&  //
@@ -352,11 +356,11 @@ void EventAction::StoreEvent(const G4Event* event) {
 
         // (output)
         fOutputFile << csv_eventID << "," << csv_trackID << "," << csv_chamberNb << ","                               //
-                    << (G4long)csv_PDGcode << "," << csv_x << "," << csv_y << "," << csv_z << ","                     //
-                    << csv_px << "," << csv_py << "," << csv_pz << ","                                                //
-                    << csv_x_ini << "," << csv_y_ini << "," << csv_z_ini << ","                                       //
-                    << csv_px_ini << "," << csv_py_ini << "," << csv_pz_ini << ","                                    //
-                    << csv_Edep << "," << csv_process << "," << (G4int)csv_issignal << ","                            //
+                    << (G4long)csv_PDGcode << "," << csv_x / cm << "," << csv_y / cm << "," << csv_z / cm << ","      //
+                    << csv_px / GeV << "," << csv_py / GeV << "," << csv_pz / GeV << ","                              //
+                    << csv_x_ini / cm << "," << csv_y_ini / cm << "," << csv_z_ini / cm << ","                        //
+                    << csv_px_ini / GeV << "," << csv_py_ini / GeV << "," << csv_pz_ini / GeV << ","                  //
+                    << csv_Edep / GeV << "," << csv_process << "," << (G4int)csv_issignal << ","                      //
                     << csv_motherID << "," << (G4long)csv_mother_PDGcode << "," << (G4int)csv_mother_issignal << ","  //
                     << csv_mother_x / cm << "," << csv_mother_y / cm << "," << csv_mother_z / cm << ","               //
                     << csv_mother_px / GeV << "," << csv_mother_py / GeV << "," << csv_mother_pz / GeV << G4endl;

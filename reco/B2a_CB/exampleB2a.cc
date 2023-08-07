@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
             bkgPdgCode = atoi(argv[4]);
             nProcesses = argv[5];
         } else {
-            G4cerr << "exampleB2a.cc :: ERROR: for batch mode, you need exactly 5 arguments, like this:" << G4endl;
+            G4cerr << "exampleB2a.cc :: ERROR: for command-line mode, you need exactly 5 arguments, like this:" << G4endl;
             G4cerr << "exampleB2a.cc ::        ./exampleB2a <signal_file> <bkg_file> <output_file> <bkg_pdg_code> <n_threads>" << G4endl;
             G4cerr << "exampleB2a.cc ::        (for only bkg simulations, set signal_file to \"0\")" << G4endl;
             return 1;
@@ -126,9 +126,9 @@ int main(int argc, char** argv) {
         UImanager->ApplyCommand("/FCT/signal_file " + signalFileName);
         UImanager->ApplyCommand("/FCT/bkg_file " + bkgFileName);
         UImanager->ApplyCommand("/FCT/output_file " + outputFileName);
-        UImanager->ApplyCommand("/FCT/bkg_pdg_code " + bkgPdgCode);
+        UImanager->ApplyCommand("/FCT/bkg_pdg_code " + std::to_string(bkgPdgCode));
         UImanager->ApplyCommand("/run/numberOfThreads " + nProcesses);
-        UImanager->ApplyCommand("/run/initialize");              // G4RunManager::Initialize().
+        UImanager->ApplyCommand("/run/initialize");  // G4RunManager::Initialize().
         UImanager->ApplyCommand("/tracking/verbose 0");
         UImanager->ApplyCommand("/tracking/storeTrajectory 2");  // IMPORTANT!!
         // G4cout << "CURRENT STATE = " << G4StateManager::GetStateManager()->GetCurrentState() << G4endl;
