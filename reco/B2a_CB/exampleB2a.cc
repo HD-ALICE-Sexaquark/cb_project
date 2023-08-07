@@ -29,8 +29,8 @@
 
 #include "ActionInitialization.hh"
 #include "DetectorConstruction.hh"
+#include "PhysicsList.hh"
 
-#include "FTFP_BERT.hh"
 #include "G4Run.hh"
 #include "G4RunManagerFactory.hh"
 #include "G4StateManager.hh"
@@ -70,11 +70,12 @@ int main(int argc, char** argv) {
     // Set mandatory initialization classes
     runManager->SetUserInitialization(new B2a::DetectorConstruction());
 
-    G4VModularPhysicsList* physicsList = new FTFP_BERT;
+    // Select a Physics List and augment it
+    G4VModularPhysicsList* physicsList = new B2a::PhysicsList;
     physicsList->RegisterPhysics(new G4StepLimiterPhysics());
-    runManager->SetUserInitialization(physicsList);
 
     // Set user action classes
+    runManager->SetUserInitialization(physicsList);
     runManager->SetUserInitialization(new B2a::ActionInitialization());
 
     // Initialize visualization

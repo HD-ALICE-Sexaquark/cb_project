@@ -88,6 +88,14 @@ void DetectorConstruction::DefineMaterials() {
     // fTargetMaterial = nistManager->FindOrBuildMaterial("G4_Pb");
 
     fChamberMaterial = nistManager->FindOrBuildMaterial("G4_Si");
+    /*
+    // (optional) increase Silicon density
+    G4Material* RegularSi = nistManager->FindOrBuildMaterial("G4_Si");
+    fChamberMaterial = new G4Material("DenseSi",                         //
+                                      RegularSi->GetElement(0)->GetZ(),  //
+                                      RegularSi->GetElement(0)->GetA(),  //
+                                      10. * RegularSi->GetDensity());
+    */
 
     // Print materials
     G4cout << *(G4Material::GetMaterialTable()) << G4endl;
@@ -206,18 +214,20 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes() {
 }
 
 void DetectorConstruction::ConstructSDandField() {
-    // Sensitive detectors
 
+    /*** Sensitive detectors ***/
+
+    // Create and register sensitive detector code module
     G4String trackerChamberSDname = "/TrackerChamberSD";
-    auto aTrackerSD = new TrackerSD(trackerChamberSDname, "TrackerHitsCollection");
+    TrackerSD* aTrackerSD = new TrackerSD(trackerChamberSDname, "TrackerHitsCollection");
     G4SDManager::GetSDMpointer()->AddNewDetector(aTrackerSD);
-    // Setting aTrackerSD to all logical volumes with the same name
-    // of "Layer_LV".
+
+    // Set aTrackerSD to all logical volumes with the same name of "Layer_LV"
     SetSensitiveDetector("Layer_LV", aTrackerSD, true);
 
-    // Create global magnetic field messenger.
-    // Uniform magnetic field is then created automatically if
-    // the field value is not zero.
+    /*** Create global magnetic field messenger ***/
+
+    // Uniform magnetic field is then created automatically if the field value is not zero
     G4ThreeVector fieldValue = G4ThreeVector(0., 0., 0.5 * tesla);
     fMagFieldMessenger = new G4GlobalMagFieldMessenger(fieldValue);
     fMagFieldMessenger->SetVerboseLevel(1);
