@@ -24,18 +24,18 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/RunAction.hh
-/// \brief Definition of the B2::RunAction class
+/// \file B2a_CB/include/RunAction.hh
+/// \brief Definition of the B2a::RunAction class
 
-#ifndef B2RunAction_h
-#define B2RunAction_h 1
+#ifndef B2aRunAction_hh
+#define B2aRunAction_hh 1
 
 #include "G4UserRunAction.hh"
 #include "globals.hh"
 
 class G4Run;
 
-namespace B2 {
+namespace B2a {
 
 // Run action class
 

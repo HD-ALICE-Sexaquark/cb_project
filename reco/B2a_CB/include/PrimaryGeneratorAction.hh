@@ -24,11 +24,11 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/PrimaryGeneratorAction.hh
-/// \brief Definition of the B2::PrimaryGeneratorAction class
+/// \file B2a_CB/include/PrimaryGeneratorAction.hh
+/// \brief Definition of the B2a::PrimaryGeneratorAction class
 
-#ifndef B2PrimaryGeneratorAction_h
-#define B2PrimaryGeneratorAction_h 1
+#ifndef B2aPrimaryGeneratorAction_hh
+#define B2aPrimaryGeneratorAction_hh 1
 
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "globals.hh"
@@ -36,7 +36,7 @@
 class G4ParticleGun;
 class G4Event;
 
-namespace B2 {
+namespace B2a {
 
 /// The primary generator action class with particle gun
 ///

@@ -75,7 +75,7 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
     * `/FCT/output_file <filename>` : set output file  (default value: `reco/output_e<event_id>.csv`)
     * `/FCT/bkg_pdg_code <pdg_code>` : PDG code of the injected background particle (default value: `-2112`)
 
-* **Batch usage:**
+* **Command-line/terminal usage:**
 
   1. Enter `reco/`
   2. Build with `bash build.sh`

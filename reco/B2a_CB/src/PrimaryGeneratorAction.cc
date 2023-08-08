@@ -24,8 +24,8 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/src/PrimaryGeneratorAction.cc
-/// \brief Implementation of the B2::PrimaryGeneratorAction class
+/// \file B2a_CB/src/PrimaryGeneratorAction.cc
+/// \brief Implementation of the B2a::PrimaryGeneratorAction class
 
 #include "PrimaryGeneratorAction.hh"
 
@@ -42,7 +42,7 @@
 extern std::string signal_file;
 extern std::string bkg_file;
 
-namespace B2 {
+namespace B2a {
 
 PrimaryGeneratorAction::PrimaryGeneratorAction() {
     G4int nofParticles = 1;

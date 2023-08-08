@@ -23,28 +23,42 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
+/// \file B2a_CB/include/PhysicsList.hh
+/// \brief Definition of the B2a::PhysicsList class
 //
-/// \file B2a_CB/include/ActionInitialization.hh
-/// \brief Definition of the B2a::ActionInitialization class
 
-#ifndef B2aActionInitialization_hh
-#define B2aActionInitialization_hh 1
+#ifndef B2aPhysicsList_hh
+#define B2aPhysicsList_hh 1
 
-#include "G4VUserActionInitialization.hh"
+#include <CLHEP/Units/SystemOfUnits.h>
+
+#include "G4VModularPhysicsList.hh"
+#include "globals.hh"
 
 namespace B2a {
 
-/// Action initialization class
-
-class ActionInitialization : public G4VUserActionInitialization {
+class PhysicsList : public G4VModularPhysicsList {
    public:
-    ActionInitialization() = default;
-    ~ActionInitialization() override = default;
+    PhysicsList(G4int ver = 1);
+    virtual ~PhysicsList() = default;
 
-    void BuildForMaster() const override;
-    void Build() const override;
+    PhysicsList(const PhysicsList&) = delete;
+    PhysicsList& operator=(const PhysicsList&) = delete;
+
+   public:
+    void ConstructProcess() override;
+    virtual void SetCuts();
+
+   private:
+    G4VPhysicsConstructor* fEmStandardPhysics;
+    G4VPhysicsConstructor* fEmExtraPhysics;
+    G4VPhysicsConstructor* fDecayPhysics;
+    G4VPhysicsConstructor* fRadioactiveDecayPhysics;
+    G4VPhysicsConstructor* fHadronElasticPhysicsHP;
+    G4VPhysicsConstructor* fHadronPhysicsFTFP_BERT_HP;
+    G4VPhysicsConstructor* fStoppingPhysics;
+    G4VPhysicsConstructor* fIonPhysics;
 };
-
-}  // namespace B2
+}  // namespace B2a
 
 #endif

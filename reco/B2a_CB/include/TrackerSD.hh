@@ -24,11 +24,11 @@
 // ********************************************************************
 //
 //
-/// \file B2/B2a/include/TrackerSD.hh
-/// \brief Definition of the B2::TrackerSD class
+/// \file B2a_CB/include/TrackerSD.hh
+/// \brief Definition of the B2a::TrackerSD class
 
-#ifndef B2TrackerSD_h
-#define B2TrackerSD_h 1
+#ifndef B2aTrackerSD_hh
+#define B2aTrackerSD_hh 1
 
 #include "G4VSensitiveDetector.hh"
 
@@ -39,7 +39,7 @@
 class G4Step;
 class G4HCofThisEvent;
 
-namespace B2 {
+namespace B2a {
 
 /// Tracker sensitive detector class
 ///
