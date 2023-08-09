@@ -12,3 +12,5 @@ output/
 **/test/
 set_env.sh
 sim/
+analysis/*.csv
+analysis/*.root

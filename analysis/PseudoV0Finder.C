@@ -106,16 +106,15 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
     std::vector<Particle_t> particles;
 
     // V0 Container thingy
-    std::vector<V0_t> AntiLambdas;   // borquez: change of logic! it's better to have two different vectors
-    std::vector<V0_t> NeutralKaons;  //          and profit from the same struct
+    std::vector<V0_t> AntiLambdas;
+    std::vector<V0_t> NeutralKaons;
 
     // S Container thingy
-    std::vector<Sexaquark_t> Sexaquarks;  // borquez: renamed it, a fully clear name would be something like
-                                          //          "AntiSexaquarkCandidates", but well
+    std::vector<Sexaquark_t> Sexaquarks;
 
     // init PDG database object
     TDatabasePDG pdg;
-    const Float_t kMassLambda = pdg.GetParticle(3122)->Mass();  // borquez ~ added these guys
+    const Float_t kMassLambda = pdg.GetParticle(3122)->Mass();
     const Float_t kMassNeutron = pdg.GetParticle(2112)->Mass();
     const Float_t kMassKaon0Long = pdg.GetParticle(130)->Mass();
 
@@ -140,7 +139,7 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
     TObjArray* token = nullptr;
     std::string line;
 
-    // read line by line
+    // read line by line ~ loop over hits
     while (std::getline(reco_file, line)) {
 
         // (debug)
@@ -186,8 +185,6 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
 
         // (cut) we want particles, not nuclei
         if (std::to_string(aux_particle.PDGcode).length() > 9) {
-            // (debug)
-            // std::cout << "PseudoV0Finder.C :: DEBUG :: aux_particle.PDGcode = " << aux_particle.PDGcode << std::endl;
             continue;
         }
 
@@ -196,27 +193,12 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
 
         // (cut) we want charged particles
         if (!aux_particle.charge) {
-            // (debug)
-            // std::cout << "PseudoV0Finder.C :: DEBUG :: aux_particle.charge = " << aux_particle.charge << std::endl;
             continue;
         }
 
-        // (debug)
-        // std::cout << "PseudoV0Finder.C :: DEBUG :: prev_track_id        = " << prev_track_id << std::endl;
-        // std::cout << "PseudoV0Finder.C :: DEBUG :: aux_particle.trackID = " << aux_particle.trackID << std::endl;
-
+        // store particle's properties
         if (aux_particle.trackID != prev_track_id) {
-
-            /*
-            // (debug)
-            std::cout << "PseudoV0Finder.C :: DEBUG :: Track = " << aux_particle.trackID << std::endl;
-            std::cout << "PseudoV0Finder.C :: DEBUG :: >> PDG Code = " << aux_particle.PDGcode << std::endl;
-            std::cout << "PseudoV0Finder.C :: DEBUG :: >> Charge   = " << aux_particle.charge << std::endl;
-            std::cout << "PseudoV0Finder.C :: " << std::endl;
-            */
-            // store particle's properties
             particles.push_back(aux_particle);
-            // std::cout << "PseudoV0Finder.C :: DEBUG :: particles has been filled" << std::endl;
         }
 
         // store current hit info on last stored particle
@@ -229,32 +211,21 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
     // close file
     reco_file.close();
 
-    // print information
-    std::cout << "PseudoV0Finder.C :: " << std::endl;
-    std::cout << "PseudoV0Finder.C :: INPUT SUMMARY" << std::endl;
-    std::cout << "PseudoV0Finder.C :: =============" << std::endl;
-    std::cout << "PseudoV0Finder.C :: >> n_particles = " << (Int_t)particles.size() << std::endl;
-    std::cout << "PseudoV0Finder.C :: " << std::endl;
-
     /*** Debug: Check content of particles vector ***/
 
     /*
-    // loop over particles
-    for (Particle_t part : particles) {
+    std::cout << "PseudoV0Finder.C :: >> N_Particles = " << (Int_t)particles.size() << std::endl;
+    std::cout << "PseudoV0Finder.C :: " << std::endl;
 
+    for (Particle_t part : particles) {
         std::cout << "PseudoV0Finder.C :: part" << part.trackID << std::endl;
         std::cout << "PseudoV0Finder.C :: >> pdg" << part.PDGcode << std::endl;
         std::cout << "PseudoV0Finder.C :: >> n_hits" << (Int_t)part.hits.size() << std::endl;
-
-        // loop over hits
         for (Hit_t hit : part.hits) {
-
-            // (debug)
             std::cout << "PseudoV0Finder.C ::    >> hit " << hit.chamberNb << std::endl;
             std::cout << "PseudoV0Finder.C ::    >> xyz " << hit.x << "," << hit.y << "," << hit.z << "," << std::endl;
-
-        }  // end of loop over hits
-    }      // end of loop over particles
+        }
+    }
     */
 
     /*** Part 2: Search for V0s ***/
@@ -275,9 +246,9 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
                 continue;
             }
 
-            aux_V0.trackID = particles[daughter1].motherID;     // borquez: implementation
-            aux_V0.daughter1ID = particles[daughter1].trackID;  // borquez: implementation
-            aux_V0.daughter2ID = particles[daughter2].trackID;  // borquez: implementation
+            aux_V0.trackID = particles[daughter1].motherID;
+            aux_V0.daughter1ID = particles[daughter1].trackID;
+            aux_V0.daughter2ID = particles[daughter2].trackID;
             aux_V0.PDGcode = particles[daughter1].mother_PDGcode;
             aux_V0.x_fin = d1_origin.X();
             aux_V0.y_fin = d1_origin.Y();
@@ -290,76 +261,60 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
             aux_V0.z_ini = particles[daughter1].mother_z;
             aux_V0.issignal = particles[daughter1].mother_issignal;
 
-            /*
-            // borquez: I would delete this, we only care about anti-lambdas and KOS
-                        if (particles[daughter1].mother_PDGcode == -2112) {
-                            aux_V0.E = TMath::Sqrt(particles[daughter1].mother_px * particles[daughter1].mother_px +
-                                                   particles[daughter1].mother_py * particles[daughter1].mother_py +
-                                                   particles[daughter1].mother_pz * particles[daughter1].mother_pz +
-                                                   kMassNeutron * kMassNeutron);
-                        }
-             */
-
-            if (particles[daughter1].mother_PDGcode == -3122) {  // borquez: found a bug! it was set to 3112!!
+            if (particles[daughter1].mother_PDGcode == -3122) {
                 aux_V0.E = TMath::Sqrt(particles[daughter1].mother_px * particles[daughter1].mother_px +
                                        particles[daughter1].mother_py * particles[daughter1].mother_py +
-                                       particles[daughter1].mother_pz * particles[daughter1].mother_pz +
-                                       kMassLambda * kMassLambda);  // borquez: implementation
-                AntiLambdas.push_back(aux_V0);                      // borquez: relocated
+                                       particles[daughter1].mother_pz * particles[daughter1].mother_pz + kMassLambda * kMassLambda);
+                AntiLambdas.push_back(aux_V0);
             }
 
             if (particles[daughter1].mother_PDGcode == 310) {
                 aux_V0.E = TMath::Sqrt(particles[daughter1].mother_px * particles[daughter1].mother_px +
                                        particles[daughter1].mother_py * particles[daughter1].mother_py +
-                                       particles[daughter1].mother_pz * particles[daughter1].mother_pz +
-                                       kMassKaon0Long * kMassKaon0Long);  // borquez: implementation
-                NeutralKaons.push_back(aux_V0);                           // borquez: relocated
+                                       particles[daughter1].mother_pz * particles[daughter1].mother_pz + kMassKaon0Long * kMassKaon0Long);
+                NeutralKaons.push_back(aux_V0);
             }
-
-            /*
-            std::cout << "PseudoV0Finder.C :: V0 found!" << std::endl;
-            std::cout << "PseudoV0Finder.C :: >> Possible PDG Code = (" << particles[daughter1].mother_PDGcode << ", " <<
-            particles[daughter2].mother_PDGcode << ")" << std::endl; std::cout << "PseudoV0Finder.C :: >> Daughters         = (" <<
-            particles[daughter1].PDGcode << ", " << particles[daughter2].PDGcode << ")" << std::endl; std::cout << "PseudoV0Finder.C ::
-            >> V0 vertex         = (" << d1_origin.X() << ", " << d1_origin.Y() << ", " << d1_origin.Z() << ")" << std::endl; std::cout
-            << "PseudoV0Finder.C :: >> Signal            = (" << particles[daughter1].mother_issignal << ", " <<
-            particles[daughter2].mother_issignal << ")" << std::endl; std::cout << "PseudoV0Finder.C :: " << std::endl;
-            */
         }
     }
 
     /*** Debug: Check content of V0s vectors ***/
 
-    // std::cout << "PseudoV0Finder.C :: >> N_AntiLambdas = " << (Int_t)AntiLambdas.size() << std::endl;
-    // std::cout << "PseudoV0Finder.C :: " << std::endl;
+    /*
+    std::cout << "PseudoV0Finder.C :: >> N_AntiLambdas = " << (Int_t)AntiLambdas.size() << std::endl;
+    std::cout << "PseudoV0Finder.C :: " << std::endl;
 
-    // for (V0_t AntiLambda : AntiLambdas) {
-    //     std::cout << "PseudoV0Finder.C :: AntiLambda " << AntiLambda.trackID << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> pdg " << AntiLambda.PDGcode << std::endl;  // borquez: redundant, but well...
-    //     std::cout << "PseudoV0Finder.C :: >> daughters (" << AntiLambda.daughter1ID << ", " << AntiLambda.daughter2ID << ")" << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> initial pos (" << AntiLambda.x_ini << ", " << AntiLambda.y_ini << ", " << AntiLambda.z_ini
-    //               << ")" << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> final pos (" << AntiLambda.x_fin << ", " << AntiLambda.y_fin << ", " << AntiLambda.z_fin << ")"
-    //               << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> momentum (" << AntiLambda.px << ", " << AntiLambda.py << ", " << AntiLambda.pz << ")"
-    //               << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> signal " << AntiLambda.issignal << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: " << std::endl;
-    // }
+    for (V0_t AntiLambda : AntiLambdas) {
+        std::cout << "PseudoV0Finder.C :: AntiLambda " << AntiLambda.trackID << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> pdg " << AntiLambda.PDGcode << std::endl;  // borquez: redundant, but well...
+        std::cout << "PseudoV0Finder.C :: >> daughters (" << AntiLambda.daughter1ID << ", " << AntiLambda.daughter2ID << ")" <<
+        std::endl; std::cout << "PseudoV0Finder.C :: >> initial pos (" << AntiLambda.x_ini << ", " << AntiLambda.y_ini << ", " <<
+        AntiLambda.z_ini
+                  << ")" << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> final pos (" << AntiLambda.x_fin << ", " << AntiLambda.y_fin << ", " << AntiLambda.z_fin <<
+        ")"
+                  << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> momentum (" << AntiLambda.px << ", " << AntiLambda.py << ", " << AntiLambda.pz << ")"
+                  << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> signal " << AntiLambda.issignal << std::endl;
+        std::cout << "PseudoV0Finder.C :: " << std::endl;
+    }
+    */
 
-    // std::cout << "PseudoV0Finder.C :: >> N_NeutralKaons = " << (Int_t)NeutralKaons.size() << std::endl;
-    // std::cout << "PseudoV0Finder.C :: " << std::endl;
+    /*
+    std::cout << "PseudoV0Finder.C :: >> N_NeutralKaons = " << (Int_t)NeutralKaons.size() << std::endl;
+    std::cout << "PseudoV0Finder.C :: " << std::endl;
 
-    // for (V0_t K0L : NeutralKaons) {
-    //     std::cout << "PseudoV0Finder.C :: K0L " << K0L.trackID << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> pdg " << K0L.PDGcode << std::endl;  // borquez: redundant, but well...
-    //     std::cout << "PseudoV0Finder.C :: >> daughters (" << K0L.daughter1ID << ", " << K0L.daughter2ID << ")" << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> initial pos (" << K0L.x_ini << ", " << K0L.y_ini << ", " << K0L.z_ini << ")" << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> final pos (" << K0L.x_fin << ", " << K0L.y_fin << ", " << K0L.z_fin << ")" << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> momentum (" << K0L.px << ", " << K0L.py << ", " << K0L.pz << ")" << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: >> signal " << K0L.issignal << std::endl;
-    //     std::cout << "PseudoV0Finder.C :: " << std::endl;
-    // }
+    for (V0_t K0L : NeutralKaons) {
+        std::cout << "PseudoV0Finder.C :: K0L " << K0L.trackID << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> pdg " << K0L.PDGcode << std::endl;  // borquez: redundant, but well...
+        std::cout << "PseudoV0Finder.C :: >> daughters (" << K0L.daughter1ID << ", " << K0L.daughter2ID << ")" << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> initial pos (" << K0L.x_ini << ", " << K0L.y_ini << ", " << K0L.z_ini << ")" << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> final pos (" << K0L.x_fin << ", " << K0L.y_fin << ", " << K0L.z_fin << ")" << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> momentum (" << K0L.px << ", " << K0L.py << ", " << K0L.pz << ")" << std::endl;
+        std::cout << "PseudoV0Finder.C :: >> signal " << K0L.issignal << std::endl;
+        std::cout << "PseudoV0Finder.C :: " << std::endl;
+    }
+    */
 
     /*** Part 3: Search for Sexaquark Candidates ***/
 
@@ -373,68 +328,46 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
     for (Int_t AL = 0; AL < (Int_t)AntiLambdas.size() - 1; AL++) {
         for (Int_t K0L = 0; K0L < (Int_t)NeutralKaons.size(); K0L++) {
 
-            // //(cut) they should come from the same vertex
-            // borquez: nice cut!! adapt it please, this should hold true!
-                TVector3 d1_origin_V(AntiLambdas[AL].x_ini, AntiLambdas[AL].y_ini, AntiLambdas[AL].z_ini);
-                TVector3 d2_origin_V(NeutralKaons[K0L].x_ini, NeutralKaons[K0L].y_ini, NeutralKaons[K0L].z_ini);
-                if (d1_origin_V != d2_origin_V) {
-                    continue;
+            // (cut) they should come from the same vertex (PENDING: to check...)
+            /*
+            TVector3 d1_origin_V(AntiLambdas[AL].x_ini, AntiLambdas[AL].y_ini, AntiLambdas[AL].z_ini);
+            TVector3 d2_origin_V(NeutralKaons[K0L].x_ini, NeutralKaons[K0L].y_ini, NeutralKaons[K0L].z_ini);
+            if (d1_origin_V != d2_origin_V) {
+                continue;
             }
+            */
 
-            // if(V0[V0A].PDGcode == -2112){
-            // Neutron.SetPxPyPzE(V0[V0A].px, V0[V0A].py, V0[V0A].pz,
-            // TMath::Sqrt((V0[V0A].px * V0[V0A].px + V0[V0A].py * V0[V0A].py
-            // + V0[V0A].pz * V0[V0A].pz) +  939.565 * 939.565));
-            // }
-
-            // if (V0s[V0A].PDGcode == -3122) { // borquez: no longer necessary
-            lvLambda.SetPxPyPzE(AntiLambdas[AL].px,  //
-                                AntiLambdas[AL].py,  //
-                                AntiLambdas[AL].pz,  //
+            lvLambda.SetPxPyPzE(AntiLambdas[AL].px, AntiLambdas[AL].py, AntiLambdas[AL].pz,  //
                                 TMath::Sqrt(AntiLambdas[AL].px * AntiLambdas[AL].px + AntiLambdas[AL].py * AntiLambdas[AL].py +
                                             AntiLambdas[AL].pz * AntiLambdas[AL].pz + kMassLambda * kMassLambda));
-            // }
 
-            // if (V0s[V0A].PDGcode == 310) { // borquez: no longer necessary
-            lvKaon.SetPxPyPzE(NeutralKaons[K0L].px,  //
-                              NeutralKaons[K0L].py,  //
-                              NeutralKaons[K0L].pz,  //
+            lvKaon.SetPxPyPzE(NeutralKaons[K0L].px, NeutralKaons[K0L].py, NeutralKaons[K0L].pz,  //
                               TMath::Sqrt(NeutralKaons[K0L].px * NeutralKaons[K0L].px + NeutralKaons[K0L].py * NeutralKaons[K0L].py +
                                           NeutralKaons[K0L].pz * NeutralKaons[K0L].pz + kMassKaon0Long * kMassKaon0Long));
-            // }
 
-            // Sexaquark.SetPxPyPzE(Lambda.Px() + Kaon.Px(), Lambda.Py() + Kaon.Py(), Lambda.Pz() + Kaon.Pz(), Lambda.E() + Kaon.E() -
-            // 939.565);
-            lvSexaquark = lvLambda + lvKaon - lvNeutron;  // borquez: looks a lil' bit cleaner, doesn't it?
+            lvSexaquark = lvLambda + lvKaon - lvNeutron;
 
             std::cout << "PseudoV0Finder.C :: >> M = " << lvSexaquark.M() << std::endl;
 
-            aux_S.v0A_ID = AntiLambdas[AL].trackID;       // to do: to be filled
-            aux_S.v0B_ID = NeutralKaons[K0L].trackID;       //
-            aux_S.v0A_PDGcode = AntiLambdas[AL].PDGcode;  //
-            aux_S.v0B_PDGcode = NeutralKaons[K0L].PDGcode;  //
-            aux_S.x_fin = AntiLambdas[AL].x_ini;        //
-            aux_S.y_fin = AntiLambdas[AL].y_ini;        //
-            aux_S.z_fin = AntiLambdas[AL].z_ini;        //
+            aux_S.v0A_ID = AntiLambdas[AL].trackID;
+            aux_S.v0B_ID = NeutralKaons[K0L].trackID;
+            aux_S.v0A_PDGcode = AntiLambdas[AL].PDGcode;
+            aux_S.v0B_PDGcode = NeutralKaons[K0L].PDGcode;
+            aux_S.x_fin = AntiLambdas[AL].x_ini;
+            aux_S.y_fin = AntiLambdas[AL].y_ini;
+            aux_S.z_fin = AntiLambdas[AL].z_ini;
             aux_S.px = lvSexaquark.Px();
             aux_S.py = lvSexaquark.Py();
             aux_S.pz = lvSexaquark.Pz();
             aux_S.E = lvSexaquark.E();
             aux_S.Mass = lvSexaquark.M();
-            aux_S.issignal = AntiLambdas[AL].issignal;  // to do: to be filled
+            aux_S.issignal = AntiLambdas[AL].issignal;
 
             Sexaquarks.push_back(aux_S);
-
-            // borquez: I removed the condition if they're signal or not, this will be important later
         }
     }
 
     /*** Debug: Check content of V0s vector ***/
-
-    // borquez: don't forget that multi-line comments exist!
-    //          please, try this section to verify your results
-    //          so far, you should only get a single signal sexaquark candidate with the sample file you provided
-    //          the bkg sexaquark candidates are coming soon, when we have bkg V0s...
 
     /*
     std::cout << "PseudoV0Finder.C :: >> N_Sexaquarks = " << (Int_t)Sexaquarks.size() << std::endl;
@@ -467,7 +400,7 @@ void PseudoV0Finder(TString input_filename = "event000_reco.csv") {
     tree->Branch("Sexaquark_x_fin", &Sexa.x_fin, "Sexaquark_x_fin/F");
     tree->Branch("Sexaquark_y_fin", &Sexa.y_fin, "Sexaquark_y_fin/F");
     tree->Branch("Sexaquark_z_fin", &Sexa.z_fin, "Sexaquark_z_fin/F");
-    tree->Branch("x_momentum", &Sexa.px, "x_momentum/F"); // to do: can you add the rest of variables I added?
+    tree->Branch("x_momentum", &Sexa.px, "x_momentum/F");
     tree->Branch("y_momentum", &Sexa.py, "y_momentum/F");
     tree->Branch("z_momentum", &Sexa.pz, "z_momentum/F");
     tree->Branch("Energy", &Sexa.E, "Energy/F");
