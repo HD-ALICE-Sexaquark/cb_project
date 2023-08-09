@@ -236,7 +236,7 @@ function prepare_execution_script() {
     echo ""                                                                           >> ${run_file}
     ### define useful function (design could be improved...)
     echo "function get_num_3dig() {"                                                  >> ${run_file}
-    echo "    sr=$1"                                                                  >> ${run_file}
+    echo '    sr=$1'                                                                  >> ${run_file}
     echo '    srn=""'                                                                 >> ${run_file}
     echo '    if [[ ${sr} -lt 10 ]]; then'                                            >> ${run_file}
     echo '        srn="00${sr}"'                                                      >> ${run_file}
