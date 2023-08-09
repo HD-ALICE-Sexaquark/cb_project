@@ -25,8 +25,8 @@ void GenBox(Int_t fPDGCode = -2112, TString fOutputFilename = "../reco/bkg.csv")
     Int_t N = 1;
 
     // params
-    Float_t fPtMin = 0.;
-    Float_t fPtMax = 5.;
+    Float_t fPtMin = 3.;
+    Float_t fPtMax = 6.;
     Float_t fThetaMin = 0.439;                    // (in rad) ~ 25.15 rad ~ eta = 1.5
     Float_t fThetaMax = TMath::Pi() - fThetaMin;  // (in rad) ~ 154.84 deg ~ eta = -1.5
     Float_t fPhiMin = 0. * TMath::DegToRad();

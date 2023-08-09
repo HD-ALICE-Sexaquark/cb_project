@@ -10,3 +10,5 @@ bkg_gen/main_fct
 Makefile**
 output/
 **/test/
+set_env.sh
+sim/

@@ -29,7 +29,7 @@ function print_help() {
     echo "  ./send_production.sh --mode <mode> --rn <rn> --serv <serv> --bkg <bkg_opt> --nproc <nproc> --outsd <out_sub_dir> --only-bkg <only-bkg>"
     echo "  where:"
     echo "  <mode>        = it can be:"
-    echo "                  * 0 : send job to the HTCondor farm" # PENDING
+    echo "                  * 0 : send job to the HTCondor farm"
     echo "                  * 1 : run processes in the background"
     echo "  <rn>          = specific run numbers, separated by comma"
     echo "                  for example:"
@@ -47,8 +47,8 @@ function print_help() {
     echo "                  * 0 : signal+bkg simulations (default)"
     echo "                  * 1 : only bkg simulations"
     echo "EXAMPLES:"
-    echo "  ./send_production.sh --mode 1 --rn 14 --bkg 111"
-    # echo "  ./send_production.sh --mode 0 --run1 0 --run2 10 --serv 14 --bkg -2212" # PENDING
+    echo "  ./send_production.sh --mode 1 --rn 14 --bkg 2112 --nproc 8 --outsd neutron --only-bkg 1"
+    echo "  ./send_production.sh --mode 0 --run1 1 --run2 8 --serv 14 --bkg -2112 --outsd anti-neutron --only-bkg 0"
 }
 
 function process_args() {
@@ -218,9 +218,104 @@ function do_reconstruction() {
         echo "send_production.sh :: running reco ${str_event}"
         ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} ${BKG_OPT} $((N_PROCESSES)) &> ${RECO_LOG}
     done
+}
 
-    # clean other csv files (PENDING: to fix when I get rid of AnalysisManager)
-    rm B2_nt*.csv
+  ##
+ ## Jobs management
+# # # # # # # # # #
+
+function prepare_execution_script() {
+
+    # copy env scripts
+    ## alienv printenv AliDPG/latest > set_env.sh
+    cp ${SIM_DIR}/set_env.sh .
+
+    # create run/command file (within OUTDIR)
+    run_file="${str_run}.sh"
+    echo "#!/bin/bash"                                                                 > ${run_file}
+    echo ""                                                                           >> ${run_file}
+    ### define useful function (design could be improved...)
+    echo "function get_num_3dig() {"                                                  >> ${run_file}
+    echo "    sr=$1"                                                                  >> ${run_file}
+    echo '    srn=""'                                                                 >> ${run_file}
+    echo '    if [[ ${sr} -lt 10 ]]; then'                                            >> ${run_file}
+    echo '        srn="00${sr}"'                                                      >> ${run_file}
+    echo '    elif [[ ${sr} -lt 100 ]]; then'                                         >> ${run_file}
+    echo '        srn="0${sr}"'                                                       >> ${run_file}
+    echo "    else"                                                                   >> ${run_file}
+    echo '        srn="${sr}"'                                                        >> ${run_file}
+    echo "    fi"                                                                     >> ${run_file}
+    echo '    echo ${srn}'                                                            >> ${run_file}
+    echo "}"                                                                          >> ${run_file}
+    ### environment
+    echo "source set_env.sh"                                                          >> ${run_file}
+    echo ""                                                                           >> ${run_file}
+    ### inject bkg
+    echo "for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do"                  >> ${run_file}
+    echo '    str_event="$(get_num_3dig ${event})"'                                   >> ${run_file}
+    echo '    BKG_CSV=event${str_event}_bkg.csv'                                      >> ${run_file}
+    echo '    BKG_LOG=event${str_event}_bkg.log'                                      >> ${run_file}
+    echo '    root -l -b -q '\''GenBox.C('${BKG_OPT}', "'\''${BKG_CSV}'\''")'\'' &> ${BKG_LOG}' >> ${run_file}
+    echo '    echo "'${run_file}' :: sending bkg ${str_event}"'                       >> ${run_file}
+    echo "done"                                                                       >> ${run_file}
+    echo "cat event*_bkg.log > ${str_run}_bkg.log"                                    >> ${run_file}
+    echo "rm event*_bkg.log"                                                          >> ${run_file}
+    ### inject signal
+    if [[ ${ONLY_BKG} -eq 0 ]]; then
+        echo "for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do"                          >> ${run_file}
+        echo '    str_event="$(get_num_3dig ${event})"'                                           >> ${run_file}
+        echo '    SIGNAL_CSV=event${str_event}_sig.csv'                                           >> ${run_file}
+        echo '    SIGNAL_LOG=event${str_event}_sig.log'                                           >> ${run_file}
+        echo '    root -l -b -q '\''GenSexaquarkReaction.C("'\''${SIGNAL_CSV}'\''")'\'' &> ${SIGNAL_LOG}' >> ${run_file}
+        echo '    echo "'${run_file}' :: sending signal ${str_event}"'                            >> ${run_file}
+        echo 'done'                                                                               >> ${run_file}
+        echo "cat event*_sig.log > ${str_run}_sig.log"                                            >> ${run_file}
+        echo "rm event*_sig.log"                                                                  >> ${run_file}
+    fi
+    ### do reconstruction
+    echo "for ((event=0; event < ${N_EVENTS_PER_RUN}; event++)); do"                              >> ${run_file}
+    echo '    str_event="$(get_num_3dig ${event})"'                                               >> ${run_file}
+    if [[ ${ONLY_BKG} -eq 0 ]]; then
+        echo '    SIGNAL_CSV=event${str_event}_sig.csv'                                           >> ${run_file}
+    else
+        echo '    SIGNAL_CSV=0'                                                                   >> ${run_file}
+    fi
+    echo '    BKG_CSV=event${str_event}_bkg.csv'                                                  >> ${run_file}
+    echo '    RECO_CSV=event${str_event}_reco.csv'                                                >> ${run_file}
+    echo '    RECO_LOG=event${str_event}_reco.log'                                                >> ${run_file}
+    echo '    echo "'${run_file}' :: running reco ${str_event}"'                                  >> ${run_file}
+    echo '    ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} '${BKG_OPT}' 1 &> ${RECO_LOG}'    >> ${run_file}
+    echo 'done'                                                                                   >> ${run_file}
+
+    chmod a+x ${run_file}
+}
+
+function create_and_send_job() {
+
+    # create job file (within OUTDIR)
+    job_file="${str_run}.job"
+    echo "executable            = ${str_run}.sh"                                              > ${job_file}
+    echo "output                = stdout.log"                                                >> ${job_file}
+    echo "error                 = stderr.log"                                                >> ${job_file}
+    echo "log                   = log.condor"                                                >> ${job_file}
+    echo "should_transfer_files = YES"                                                       >> ${job_file}
+    if [[ ${ONLY_BKG} -eq 0 ]]; then
+        echo "transfer_input_files  = set_env.sh,GenBox.C,GenSexaquarkReaction.C,exampleB2a" >> ${job_file}
+    else
+        echo "transfer_input_files  = set_env.sh,GenBox.C,exampleB2a"                        >> ${job_file}
+    fi
+    echo 'requirements          = (Machine == "alice-serv'${SERV}'")'                        >> ${job_file}
+    echo "queue"                                                                             >> ${job_file}
+
+    # print info about output directory and copied files (debug purposes)
+    echo "send_production.sh :: displaying content of ${PWD}:"
+    for file in *.*; do echo "send_production.sh :: -- ${file}"; done
+
+    # send job
+    echo "send_production.sh :: sending ${job_file}..."
+    condor_submit ${job_file}
+
+    echo "send_production.sh ::"
 }
 
   ##
@@ -307,8 +402,14 @@ echo "send_production.sh :: Parameters:"
 echo "send_production.sh :: >> SIM_DIR          = ${SIM_DIR}"
 echo "send_production.sh :: >> OUTPUT_DIR       = ${OUTPUT_DIR}"
 echo "send_production.sh :: >> N_EVENTS_PER_RUN = ${N_EVENTS_PER_RUN}"
-echo "send_production.sh"
+echo "send_production.sh ::"
 echo "send_production.sh :: Chosen options:"
+echo "send_production.sh :: >> mode     = ${INT_MODE}"
+if [[ ${INT_MODE} -eq 1 ]]; then
+    echo "send_production.sh :: >> nproc    = ${N_PROCESSES}"
+else
+    echo "send_production.sh :: >> serv     = ${SERV}"
+fi
 echo "send_production.sh :: >> only_bkg = ${ONLY_BKG}"
 echo "send_production.sh :: >> bkg_opt  = ${BKG_OPT}"
 echo -n "send_production.sh :: >> runs     = "
@@ -316,13 +417,24 @@ for run in ${RUN_NUMBER_ARR[@]}; do
     echo -n "$(get_num_3dig ${run}) "
 done
 echo ""
-echo "send_production.sh :: >> mode     = ${INT_MODE}"
-if [[ ${INT_MODE} -eq 1 ]]; then
-    echo "send_production.sh :: >> nproc    = ${N_PROCESSES}"
-else
-    echo "send_production.sh :: >> serv     = ${SERV}"
+echo "send_production.sh :: "
+
+# create set_env.sh
+if [[ ${INT_MODE} -eq 0 ]] && [[ ! -e ${SIM_DIR}/set_env.sh ]]; then
+    G4_ENV_SCRIPT=${GEANT4_DATA_DIR}/../../../bin/geant4.sh # crazy, but safe...
+    echo "#!/bin/bash"                         > ${SIM_DIR}/set_env.sh
+    echo 'CURRENT_DIR=${PWD}'                 >> ${SIM_DIR}/set_env.sh
+    echo "cd ${ROOTSYS}/bin"                  >> ${SIM_DIR}/set_env.sh
+    echo "source thisroot.sh"                 >> ${SIM_DIR}/set_env.sh
+    echo ""                                   >> ${SIM_DIR}/set_env.sh
+    echo "### my separator ###"               >> ${SIM_DIR}/set_env.sh
+    echo ""                                   >> ${SIM_DIR}/set_env.sh
+    echo "cd ${GEANT4_DATA_DIR}/../../../bin" >> ${SIM_DIR}/set_env.sh
+    echo "source geant4.sh"                   >> ${SIM_DIR}/set_env.sh
+    echo ""                                   >> ${SIM_DIR}/set_env.sh
+    echo 'cd ${CURRENT_DIR}'                  >> ${SIM_DIR}/set_env.sh
+    chmod a+x ${SIM_DIR}/set_env.sh
 fi
-echo "send_production.sh"
 
 # start loop
 for run in ${RUN_NUMBER_ARR[@]}; do
@@ -358,12 +470,13 @@ for run in ${RUN_NUMBER_ARR[@]}; do
         fi
         do_reconstruction
     else
-        echo "... WIP ..." # PENDING
+        prepare_execution_script
+        create_and_send_job
     fi
-
-    echo "send_production.sh ::"
-    echo "send_production.sh :: all done."
 
     # go back to sim dir
     cd ${SIM_DIR}
 done
+
+echo "send_production.sh ::"
+echo "send_production.sh :: all done."
