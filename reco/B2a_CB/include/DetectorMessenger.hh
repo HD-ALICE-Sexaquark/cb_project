@@ -36,18 +36,10 @@
 class G4UIdirectory;
 class G4UIcmdWithAString;
 class G4UIcmdWithAnInteger;
-class G4UIcmdWithADoubleAndUnit;
 
 namespace B2a {
 
 class DetectorConstruction;
-
-/// Messenger class that defines commands for DetectorConstruction.
-///
-/// It implements commands:
-/// - /B2/det/setTargetMaterial name
-/// - /B2/det/setChamberMaterial name
-/// - /B2/det/stepMax value unit
 
 class DetectorMessenger : public G4UImessenger {
    public:
@@ -59,19 +51,12 @@ class DetectorMessenger : public G4UImessenger {
    private:
     DetectorConstruction* fDetectorConstruction = nullptr;
 
-    G4UIdirectory* fFCT = nullptr;
-    G4UIdirectory* fDirectory = nullptr;
-    G4UIdirectory* fDetDirectory = nullptr;
-
-    G4UIcmdWithAString* fTargMatCmd = nullptr;
-    G4UIcmdWithAString* fChamMatCmd = nullptr;
+    G4UIdirectory* fALICE3 = nullptr;
 
     G4UIcmdWithAString* fSignalFileCmd = nullptr;
     G4UIcmdWithAString* fBkgFileCmd = nullptr;
     G4UIcmdWithAString* fOutputFileCmd = nullptr;
     G4UIcmdWithAnInteger* fBkgPdgCodeCmd = nullptr;
-
-    G4UIcmdWithADoubleAndUnit* fStepMaxCmd = nullptr;
 };
 
 }  // namespace B2a

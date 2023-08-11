@@ -216,7 +216,7 @@ function do_reconstruction() {
 
         # run sequentially, geant4 takes care of the parallelization
         echo "send_production.sh :: running reco ${str_event}"
-        ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} ${BKG_OPT} $((N_PROCESSES)) &> ${RECO_LOG}
+        ./exampleB2a ${BKG_OPT} ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} $((N_PROCESSES)) &> ${RECO_LOG}
     done
 }
 
@@ -284,7 +284,7 @@ function prepare_execution_script() {
     echo '    RECO_CSV=event${str_event}_reco.csv'                                                >> ${run_file}
     echo '    RECO_LOG=event${str_event}_reco.log'                                                >> ${run_file}
     echo '    echo "'${run_file}' :: running reco ${str_event}"'                                  >> ${run_file}
-    echo '    ./exampleB2a ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} '${BKG_OPT}' 1 &> ${RECO_LOG}'    >> ${run_file}
+    echo '    ./exampleB2a '${BKG_OPT}' ${SIGNAL_CSV} ${BKG_CSV} ${RECO_CSV} 1 &> ${RECO_LOG}'    >> ${run_file}
     echo 'done'                                                                                   >> ${run_file}
 
     chmod a+x ${run_file}

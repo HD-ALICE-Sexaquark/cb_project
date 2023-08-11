@@ -55,7 +55,7 @@
 
 namespace B2a {
 
-PhysicsList::PhysicsList(G4int ver)
+PhysicsList::PhysicsList(G4int ver, G4int PdgCode)
     : fEmStandardPhysics(nullptr),
       fEmExtraPhysics(nullptr),
       fDecayPhysics(nullptr),
@@ -63,7 +63,8 @@ PhysicsList::PhysicsList(G4int ver)
       fHadronElasticPhysicsHP(nullptr),
       fHadronPhysicsFTFP_BERT_HP(nullptr),
       fStoppingPhysics(nullptr),
-      fIonPhysics(nullptr) {
+      fIonPhysics(nullptr),
+      fPdgCode(PdgCode) {
 
     if (ver > 0) {
         G4cout << "<<< Geant4 Physics List simulation engine: B2a::PhysicsList" << G4endl;
@@ -119,16 +120,38 @@ void PhysicsList::ConstructProcess() {
     fStoppingPhysics->ConstructProcess();
     fIonPhysics->ConstructProcess();
 
-    /* Customize cross-section */
+    CustomizeCrossSection();
+    CustomizeBranchingRatios();
+}
 
+void PhysicsList::CustomizeCrossSection() {
+
+    // neutron
+    const G4ParticleDefinition* neutron = G4Neutron::Neutron();
+    G4HadronicProcess* neutronInelastic = G4PhysListUtil::FindInelasticProcess(neutron);
+
+    if (fPdgCode == 2112 && neutronInelastic != nullptr) {
+        neutronInelastic->MultiplyCrossSectionBy(100.);
+    }
+
+    // K0L
+    const G4ParticleDefinition* k0Long = G4KaonZeroLong::KaonZeroLong();
+    G4HadronicProcess* k0LongInelastic = G4PhysListUtil::FindInelasticProcess(k0Long);
+
+    if (fPdgCode == 130 && k0LongInelastic != nullptr) {
+        k0LongInelastic->MultiplyCrossSectionBy(100.);
+    }
+
+    // anti-neutron
     const G4ParticleDefinition* anti_neutron = G4AntiNeutron::AntiNeutron();
     G4HadronicProcess* anti_neutronInelastic = G4PhysListUtil::FindInelasticProcess(anti_neutron);
 
-    if (anti_neutronInelastic != nullptr) {
+    if (fPdgCode == -2112 && anti_neutronInelastic != nullptr) {
         anti_neutronInelastic->MultiplyCrossSectionBy(100.);
     }
+}
 
-    /* Customize branching ratios */
+void PhysicsList::CustomizeBranchingRatios() {
 
     // K0S
     G4ParticleDefinition* kaon_zero_short = G4KaonZeroShort::KaonZeroShort();

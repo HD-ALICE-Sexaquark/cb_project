@@ -39,7 +39,7 @@ namespace B2a {
 
 class PhysicsList : public G4VModularPhysicsList {
    public:
-    PhysicsList(G4int ver = 1);
+    PhysicsList(G4int ver = 1, G4int PdgCode = -2112);
     virtual ~PhysicsList() = default;
 
     PhysicsList(const PhysicsList&) = delete;
@@ -48,6 +48,10 @@ class PhysicsList : public G4VModularPhysicsList {
    public:
     void ConstructProcess() override;
     virtual void SetCuts();
+
+   public:
+    void CustomizeBranchingRatios();
+    void CustomizeCrossSection();
 
    private:
     G4VPhysicsConstructor* fEmStandardPhysics;
@@ -58,6 +62,7 @@ class PhysicsList : public G4VModularPhysicsList {
     G4VPhysicsConstructor* fHadronPhysicsFTFP_BERT_HP;
     G4VPhysicsConstructor* fStoppingPhysics;
     G4VPhysicsConstructor* fIonPhysics;
+    G4int fPdgCode;
 };
 }  // namespace B2a
 

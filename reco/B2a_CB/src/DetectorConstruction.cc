@@ -128,7 +128,7 @@ G4VPhysicalVolume* DetectorConstruction::DefineVolumes() {
                                      0,                // copy number
                                      fCheckOverlaps);  // checking overlaps
 
-    /*** Tracker (FCT) ***/
+    /*** Tracker (ALICE 3 Central Barrel) ***/
 
     // define dimensions
     G4double trackerLength = 264. * cm;

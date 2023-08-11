@@ -51,11 +51,47 @@ std::string output_file = "";
 int bkg_pdg_code = 0;
 
 int main(int argc, char** argv) {
-    // Detect interactive mode (if no arguments) and define UI session
+
+    /* Process input command-line arguments */
+
     G4UIExecutive* ui = nullptr;
-    if (argc == 1) {
+    G4int bkgPdgCode;
+    G4String signalFileName;
+    G4String bkgFileName;
+    G4String outputFileName;
+    G4String nProcesses;
+
+    if (argc == 2) {
         ui = new G4UIExecutive(argc, argv);
+        bkgPdgCode = atoi(argv[1]);
+    } else if (argc == 6) {
+        bkgPdgCode = atoi(argv[1]);
+        signalFileName = argv[2];
+        bkgFileName = argv[3];
+        outputFileName = argv[4];
+        nProcesses = argv[5];
+    } else {
+        G4cerr << "exampleB2a.cc :: ERROR: 1 or 5 arguments must be supplied." << G4endl;
+        G4cerr << "exampleB2a.cc ::        -> for command-line mode, you need exactly 5 arguments, like this:" << G4endl;
+        G4cerr << "exampleB2a.cc ::           ./exampleB2a <bkg_pdg_code> <signal_file> <bkg_file> <output_file> <n_threads>" << G4endl;
+        G4cerr << "exampleB2a.cc ::           (for only bkg simulations, set signal_file to \"0\")" << G4endl;
+        G4cerr << "exampleB2a.cc ::        -> for graphic-interactive mode, you need a single argument, like this:" << G4endl;
+        G4cerr << "exampleB2a.cc ::           ./exampleB2a <bkg_pdg_code>" << G4endl;
+        return 1;
     }
+
+    // (debug)
+    G4cout << "exampleB2a.cc :: initiating..." << G4endl;
+    G4cout << "exampleB2a.cc :: >> bkgPdgCode     = " << bkgPdgCode << G4endl;
+    if (signalFileName == "0") {
+        G4cout << "exampleB2a.cc :: >> mode = only-bkg" << G4endl;
+    } else {
+        G4cout << "exampleB2a.cc :: >> mode = signal+bkg" << G4endl;
+        G4cout << "exampleB2a.cc :: >> signalFileName = " << signalFileName << G4endl;
+    }
+    G4cout << "exampleB2a.cc :: >> bkgFileName    = " << bkgFileName << G4endl;
+    G4cout << "exampleB2a.cc :: >> outputFileName = " << outputFileName << G4endl;
+    G4cout << "exampleB2a.cc :: >> nProcesses     = " << nProcesses << G4endl;
 
     // Optionally: choose a different Random engine...
     // G4Random::setTheEngine(new CLHEP::MTwistEngine);
@@ -71,7 +107,7 @@ int main(int argc, char** argv) {
     runManager->SetUserInitialization(new B2a::DetectorConstruction());
 
     // Select a Physics List and augment it
-    G4VModularPhysicsList* physicsList = new B2a::PhysicsList;
+    G4VModularPhysicsList* physicsList = new B2a::PhysicsList(1, bkgPdgCode);
     physicsList->RegisterPhysics(new G4StepLimiterPhysics());
 
     // Set user action classes
@@ -96,46 +132,16 @@ int main(int argc, char** argv) {
     // Process macro or start UI session
     if (!ui) {
         // batch mode
-        G4String signalFileName;
-        G4String bkgFileName;
-        G4String outputFileName;
-        G4int bkgPdgCode;
-        G4String nProcesses;
-        if (argc == 6) {
-            signalFileName = argv[1];
-            bkgFileName = argv[2];
-            outputFileName = argv[3];
-            bkgPdgCode = atoi(argv[4]);
-            nProcesses = argv[5];
-        } else {
-            G4cerr << "exampleB2a.cc :: ERROR: for command-line mode, you need exactly 5 arguments, like this:" << G4endl;
-            G4cerr << "exampleB2a.cc ::        ./exampleB2a <signal_file> <bkg_file> <output_file> <bkg_pdg_code> <n_threads>" << G4endl;
-            G4cerr << "exampleB2a.cc ::        (for only bkg simulations, set signal_file to \"0\")" << G4endl;
-            return 1;
-        }
-        // (debug)
-        if (signalFileName == "0") {
-            G4cout << "exampleB2a.cc :: mode = only-bkg" << G4endl;
-        } else {
-            G4cout << "exampleB2a.cc :: mode = signal+bkg" << G4endl;
-            G4cout << "exampleB2a.cc :: signalFileName = " << signalFileName << G4endl;
-        }
-        G4cout << "exampleB2a.cc :: bkgFileName    = " << bkgFileName << G4endl;
-        G4cout << "exampleB2a.cc :: outputFileName = " << outputFileName << G4endl;
-        G4cout << "exampleB2a.cc :: bkgPdgCode     = " << bkgPdgCode << G4endl;
-        G4cout << "exampleB2a.cc :: nProcesses     = " << nProcesses << G4endl;
-        UImanager->ApplyCommand("/FCT/signal_file " + signalFileName);
-        UImanager->ApplyCommand("/FCT/bkg_file " + bkgFileName);
-        UImanager->ApplyCommand("/FCT/output_file " + outputFileName);
-        UImanager->ApplyCommand("/FCT/bkg_pdg_code " + std::to_string(bkgPdgCode));
+        UImanager->ApplyCommand("/ALICE3/signal_file " + signalFileName);
+        UImanager->ApplyCommand("/ALICE3/bkg_file " + bkgFileName);
+        UImanager->ApplyCommand("/ALICE3/output_file " + outputFileName);
+        UImanager->ApplyCommand("/ALICE3/bkg_pdg_code " + std::to_string(bkgPdgCode));
         UImanager->ApplyCommand("/run/numberOfThreads " + nProcesses);
         UImanager->ApplyCommand("/run/initialize");  // G4RunManager::Initialize().
         UImanager->ApplyCommand("/tracking/verbose 0");
         UImanager->ApplyCommand("/tracking/storeTrajectory 2");  // IMPORTANT!!
-        // G4cout << "CURRENT STATE = " << G4StateManager::GetStateManager()->GetCurrentState() << G4endl;
         while (true) {
             UImanager->ApplyCommand("/run/beamOn " + nProcesses);
-            // master_runManager = G4RunManagerFactory::GetMasterRunManager();
             run = runManager ? runManager->GetCurrentRun() : nullptr;
             events = run ? run->GetEventVector() : nullptr;
             nKeptEvents = events ? (G4int)events->size() : 0;

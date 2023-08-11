@@ -50,7 +50,7 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
   First, make sure you already have both of your input files (check **Available commands** below). Then, inside the `reco/` dir:
 
   1. Build with `bash build.sh`
-  2. Execute with `bash run_gui.sh`, this will open a GUI
+  2. Execute with `bash run_gui.sh <pdg_code>` (where `<pdg_code>` is the PDG code of the injected background particle), this will open a GUI
   3. In case you want to set different input/output files than the default ones, set the files as in **Available commands**
   4. Press the `/run/beamOn 1` button to generate a single event, propagating both signal and background particles
 
@@ -70,10 +70,10 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
 
   * **Available commands**:
 
-    * `/FCT/signal_file <filename>` : set input signal file (default value: `reco/signal.csv`). To read only the background file, set `/FCT/signal_file 0`
-    * `/FCT/bkg_file <filename>` : set input background file  (default value: `reco/bkg.csv`)
-    * `/FCT/output_file <filename>` : set output file  (default value: `reco/output_e<event_id>.csv`)
-    * `/FCT/bkg_pdg_code <pdg_code>` : PDG code of the injected background particle (default value: `-2112`)
+    * `/ALICE3/signal_file <filename>` : set input signal file (default value: `reco/signal.csv`). To read only the background file, set `/ALICE3/signal_file 0`
+    * `/ALICE3/bkg_file <filename>` : set input background file  (default value: `reco/bkg.csv`)
+    * `/ALICE3/output_file <filename>` : set output file  (default value: `reco/output_e<event_id>.csv`)
+    * `/ALICE3/bkg_pdg_code <pdg_code>` : PDG code of the injected background particle (default value: `-2112`) (**IMPORTANT**: it can be used to modify the trigger condition to keep relevant events, however, it will not update the inelastic scattering cross-section, for that, one has to restart the program with the proper code as first argument)
 
 * **Command-line/terminal usage:**
 
@@ -82,9 +82,9 @@ Simulations of interactions between anti-sexaquarks and neutrons in the Central 
   3. Enter `B2a_CB_build/`
   4. Execute with:
      ```
-     ./exampleB2a <signal_file> <bkg_file> <output_file> <bkg_pdg_code> <n_threads>
+     ./exampleB2a <bkg_pdg_code> <signal_file> <bkg_file> <output_file> <n_threads>
      ```
-     Here, the first three arguments are self-explanatory, while `<bkg_pdg_code>` corresponds to the PDG code of the background particle, and `<n_threads>` to the number of parallel processes to run (recommended value: half of the machine's cores).
+     Here, `<bkg_pdg_code>` corresponds to the PDG code of the background particle, while the next three arguments are self-explanatory, `<n_threads>` is the number of parallel processes to run (recommended value: half of the machine's cores).
   5. Program will finish when a relevant event has been reconstructed and an `<output_file>` with its content will be created (check **Output** above).
 
 ## **bkg_injector** / **sig_injector**
